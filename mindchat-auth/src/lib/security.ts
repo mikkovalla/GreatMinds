@@ -1,3 +1,6 @@
+import { createRequestLogger } from "./logging";
+import type { ErrorCode } from "./loggingConstants";
+
 /**
  * Rate limiting configuration constants
  */
@@ -363,18 +366,9 @@ export const validateAndSecureRequest = async (
 export const logSecurityEvent = (
   event: string,
   request: Request,
+  errorCode: ErrorCode = 3005,
   additionalData?: Record<string, unknown>
 ): void => {
-  const logData = {
-    timestamp: new Date().toISOString(),
-    event,
-    ip: getClientIP(request),
-    userAgent: request.headers.get("user-agent"),
-    method: request.method,
-    url: new URL(request.url).pathname,
-    ...additionalData,
-  };
-
-  // TODO: Add proper logging service for prod
-  console.log("[SECURITY]", JSON.stringify(logData));
+  const requestLogger = createRequestLogger(request);
+  requestLogger.log(errorCode, event, {}, additionalData);
 };

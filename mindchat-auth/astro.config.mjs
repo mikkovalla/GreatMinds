@@ -7,4 +7,11 @@ import vue from "@astrojs/vue";
 export default defineConfig({
   output: "server",
   integrations: [vue()],
+  vite: {
+    resolve: {
+      alias: {
+        "@": new URL("./src", import.meta.url).pathname,
+      },
+    },
+  },
 });

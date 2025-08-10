@@ -1,5 +1,5 @@
-import type { ErrorCode, LogLevel, LogEntry, EventCategory } from './loggingConstants';
-import { getEventCategory, getLogLevel } from './loggingConstants';
+import type { ErrorCode, LogLevel, LogEntry } from "./loggingConstants";
+import { getEventCategory, getLogLevel } from "./loggingConstants";
 
 /**
  * Logger configuration interface
@@ -16,14 +16,14 @@ type LoggerConfig = {
  * ANSI color codes for console output
  */
 const colors = {
-  reset: '\x1b[0m',
-  red: '\x1b[31m',
-  yellow: '\x1b[33m',
-  blue: '\x1b[34m',
-  green: '\x1b[32m',
-  magenta: '\x1b[35m',
-  cyan: '\x1b[36m',
-  gray: '\x1b[90m',
+  reset: "\x1b[0m",
+  red: "\x1b[31m",
+  yellow: "\x1b[33m",
+  blue: "\x1b[34m",
+  green: "\x1b[32m",
+  magenta: "\x1b[35m",
+  cyan: "\x1b[36m",
+  gray: "\x1b[90m",
 } as const;
 
 /**
@@ -49,13 +49,13 @@ class AuthLogger {
   private createLogEntry(
     code: ErrorCode,
     message: string,
-    context: LogEntry['context'] = {},
+    context: LogEntry["context"] = {},
     metadata?: Record<string, unknown>,
     error?: Error
   ): LogEntry {
     const timestamp = new Date().toISOString();
     const level = getLogLevel(code);
-    
+
     const logEntry: LogEntry = {
       timestamp,
       level,
@@ -90,15 +90,21 @@ class AuthLogger {
    * Gets color for log level
    */
   private getColorForLevel(level: LogLevel): string {
-    if (!this.config.enableColors) return '';
-    
+    if (!this.config.enableColors) return "";
+
     switch (level) {
-      case 0: return colors.gray;    // DEBUG
-      case 1: return colors.blue;    // INFO
-      case 2: return colors.yellow;  // WARN
-      case 3: return colors.red;     // ERROR
-      case 4: return colors.magenta; // CRITICAL
-      default: return colors.reset;
+      case 0:
+        return colors.gray; // DEBUG
+      case 1:
+        return colors.blue; // INFO
+      case 2:
+        return colors.yellow; // WARN
+      case 3:
+        return colors.red; // ERROR
+      case 4:
+        return colors.magenta; // CRITICAL
+      default:
+        return colors.reset;
     }
   }
 
@@ -106,8 +112,8 @@ class AuthLogger {
    * Gets log level name
    */
   private getLevelName(level: LogLevel): string {
-    const names = ['DEBUG', 'INFO', 'WARN', 'ERROR', 'CRITICAL'];
-    return names[level] || 'UNKNOWN';
+    const names = ["DEBUG", "INFO", "WARN", "ERROR", "CRITICAL"];
+    return names[level] || "UNKNOWN";
   }
 
   /**
@@ -115,10 +121,10 @@ class AuthLogger {
    */
   private formatForConsole(entry: LogEntry): string {
     const color = this.getColorForLevel(entry.level);
-    const reset = this.config.enableColors ? colors.reset : '';
+    const reset = this.config.enableColors ? colors.reset : "";
     const levelName = this.getLevelName(entry.level).padEnd(8);
     const category = getEventCategory(entry.code).toUpperCase().padEnd(10);
-    
+
     if (this.config.enableJsonFormat) {
       return JSON.stringify(entry, null, 2);
     }
@@ -144,10 +150,16 @@ class AuthLogger {
     }
 
     if (entry.metadata && Object.keys(entry.metadata).length > 0) {
-      parts.push(`\n${colors.gray}Metadata: ${JSON.stringify(entry.metadata, null, 2)}${reset}`);
+      parts.push(
+        `\n${colors.gray}Metadata: ${JSON.stringify(
+          entry.metadata,
+          null,
+          2
+        )}${reset}`
+      );
     }
 
-    return parts.join(' ');
+    return parts.join(" ");
   }
 
   /**
@@ -160,7 +172,7 @@ class AuthLogger {
 
     if (this.config.enableConsoleOutput) {
       const formatted = this.formatForConsole(entry);
-      
+
       // Use appropriate console method based on level
       switch (entry.level) {
         case 0: // DEBUG
@@ -191,7 +203,7 @@ class AuthLogger {
   /**
    * Extracts context from request object
    */
-  private extractRequestContext(request?: Request): LogEntry['context'] {
+  private extractRequestContext(request?: Request): LogEntry["context"] {
     if (!request) return {};
 
     try {
@@ -199,16 +211,17 @@ class AuthLogger {
       return {
         method: request.method,
         url: url.pathname,
-        ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-            request.headers.get('x-real-ip') ||
-            request.headers.get('cf-connecting-ip') ||
-            'unknown',
-        userAgent: request.headers.get('user-agent') || undefined,
+        ip:
+          request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+          request.headers.get("x-real-ip") ||
+          request.headers.get("cf-connecting-ip") ||
+          "unknown",
+        userAgent: request.headers.get("user-agent") || undefined,
       };
     } catch {
       return {
         method: request.method,
-        ip: 'unknown',
+        ip: "unknown",
       };
     }
   }
@@ -219,7 +232,7 @@ class AuthLogger {
   log(
     code: ErrorCode,
     message: string,
-    context?: LogEntry['context'],
+    context?: LogEntry["context"],
     metadata?: Record<string, unknown>
   ): void {
     const entry = this.createLogEntry(code, message, context, metadata);
@@ -233,7 +246,7 @@ class AuthLogger {
     code: ErrorCode,
     message: string,
     error: Error,
-    context?: LogEntry['context'],
+    context?: LogEntry["context"],
     metadata?: Record<string, unknown>
   ): void {
     const entry = this.createLogEntry(code, message, context, metadata, error);
@@ -247,7 +260,7 @@ class AuthLogger {
     code: ErrorCode,
     message: string,
     request: Request,
-    additionalContext?: Partial<LogEntry['context']>,
+    additionalContext?: Partial<LogEntry["context"]>,
     metadata?: Record<string, unknown>
   ): void {
     const requestContext = this.extractRequestContext(request);
@@ -263,7 +276,7 @@ class AuthLogger {
     message: string,
     error: Error,
     request: Request,
-    additionalContext?: Partial<LogEntry['context']>,
+    additionalContext?: Partial<LogEntry["context"]>,
     metadata?: Record<string, unknown>
   ): void {
     const requestContext = this.extractRequestContext(request);
@@ -274,21 +287,32 @@ class AuthLogger {
   /**
    * Creates a child logger with additional context
    */
-  child(additionalContext: Partial<LogEntry['context']>): AuthLogger {
+  child(additionalContext: Partial<LogEntry["context"]>): AuthLogger {
     const childLogger = new AuthLogger(this.config);
-    
+
     // Override the log methods to include additional context
     const originalLog = childLogger.log.bind(childLogger);
     const originalLogError = childLogger.logError.bind(childLogger);
-    
+
     childLogger.log = (code, message, context = {}, metadata) => {
-      originalLog(code, message, { ...additionalContext, ...context }, metadata);
+      originalLog(
+        code,
+        message,
+        { ...additionalContext, ...context },
+        metadata
+      );
     };
-    
+
     childLogger.logError = (code, message, error, context = {}, metadata) => {
-      originalLogError(code, message, error, { ...additionalContext, ...context }, metadata);
+      originalLogError(
+        code,
+        message,
+        error,
+        { ...additionalContext, ...context },
+        metadata
+      );
     };
-    
+
     return childLogger;
   }
 
@@ -312,20 +336,24 @@ export const createRequestLogger = (request: Request): AuthLogger => {
   const requestContext = {
     method: request.method,
     url: new URL(request.url).pathname,
-    ip: request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ||
-        request.headers.get('x-real-ip') ||
-        request.headers.get('cf-connecting-ip') ||
-        'unknown',
-    userAgent: request.headers.get('user-agent') || undefined,
+    ip:
+      request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+      request.headers.get("x-real-ip") ||
+      request.headers.get("cf-connecting-ip") ||
+      "unknown",
+    userAgent: request.headers.get("user-agent") || undefined,
   };
-  
+
   return logger.child(requestContext);
 };
 
 /**
  * Creates a logger instance for a specific user
  */
-export const createUserLogger = (userId: string, email?: string): AuthLogger => {
+export const createUserLogger = (
+  userId: string,
+  email?: string
+): AuthLogger => {
   return logger.child({ userId, email });
 };
 
@@ -337,10 +365,10 @@ export const measurePerformance = <T>(
   fn: () => T | Promise<T>
 ): T | Promise<T> => {
   const start = performance.now();
-  
+
   try {
     const result = fn();
-    
+
     if (result instanceof Promise) {
       return result.finally(() => {
         const duration = performance.now() - start;

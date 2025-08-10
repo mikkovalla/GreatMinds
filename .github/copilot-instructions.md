@@ -115,6 +115,13 @@ The project uses Model Context Protocol servers (see `.vscode/mcp.json`):
 - `src/env.d.ts`: TypeScript environment interface
 - `astro.config.mjs`: Framework configuration
 - `.vscode/mcp.json`: Development tooling setup
+- `src/styles/global.css`: Global styles and CSS variables
+- `src/lib/loggingConstants.ts`: Logging constants
+- `src/lib/logging.ts`: Logging utilities
+- `src/lib/validation.ts`: Input validation schemas
+- `src/lib/security.ts`: Security-related utilities
+- `.github/docs/database.schema.md`: Database schema documentation
+- `.github/docs/Logging.md`: Logging documentation
 
 ## Critical thinking
 
@@ -141,3 +148,12 @@ The think tool has been proven to improve performance by up to 54% on complex ta
 
 - Always ensure you have the latest context before proceeding with any task
 - Use the think tool to confirm your understanding of the task and context
+
+## Documentation
+
+- Every feature should have corresponding documentation
+- Documentation should be kept up-to-date with code changes
+- Documentation should be clear and concise
+- Documentation should include examples where applicable
+- Documentation should be versioned alongside the code
+- Documentation is found at `.github/docs/`

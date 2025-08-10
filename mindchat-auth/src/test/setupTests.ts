@@ -1,78 +1,55 @@
 /**
  * Test setup configuration for the mindchat-auth application.
  *
- * This file configures mock implementations for external dependencies used throughout
- * the test suite, ensuring isolated and predictable testing environments.
+ * This file provides minimal global mocking for external infrastructure dependencies
+ * that should be mocked in all tests. Business logic mocks should be defined in
+ * individual test files for better test isolation and maintainability.
  *
- * @fileoverview Sets up mocks for Supabase client, security utilities, validation functions,
- * and logging services to enable comprehensive unit testing without external dependencies.
+ * @fileoverview Global setup for external dependencies only:
+ * - External APIs (Supabase)
+ * - Environment-specific utilities
+ * - Infrastructure concerns
  *
- * Mocked modules:
- * - `@/lib/supabaseClient` - Database and authentication operations
- * - `@/lib/security` - Request validation and response creation utilities
- * - `@/lib/validation` - Form and input validation functions
- * - `@/lib/logging` - Application logging and request tracking
- *
+ * Business logic mocks should be defined per-test for:
+ * - Better test readability
+ * - Explicit test dependencies
+ * - Easier debugging when tests fail
+ * - Test isolation
  */
 import { beforeEach, vi } from "vitest";
-import type * as security from "@/lib/security";
 
 // Reset all mocks before each test
 beforeEach(() => {
   vi.resetAllMocks();
 });
 
-// Mock Supabase
+// Mock external dependencies only - these are infrastructure concerns
+// that should always be mocked in tests
+
+// Mock Supabase - External API
 vi.mock("@/lib/supabaseClient", () => ({
   supabase: {
     auth: {
       signUp: vi.fn(),
       signInWithPassword: vi.fn(),
       setSession: vi.fn(),
+      signOut: vi.fn(),
     },
     from: vi.fn(() => ({
       insert: vi.fn(),
+      select: vi.fn(),
+      update: vi.fn(),
+      delete: vi.fn(),
     })),
   },
 }));
 
-// Mock Security
-vi.mock("@/lib/security", async (importOriginal) => {
-  const original = await importOriginal<typeof security>();
-  return {
-    ...original,
-    validateAndSecureRequest: vi.fn().mockResolvedValue({ valid: true }),
-    createErrorResponse: vi.fn(
-      (status, error, message) =>
-        new Response(JSON.stringify({ error, message }), { status })
-    ),
-    createSuccessResponse: vi.fn(
-      (data, status) => new Response(JSON.stringify(data), { status })
-    ),
-    getCookieOptions: vi.fn().mockReturnValue({
-      path: "/",
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-    }),
-  };
-});
+// Mock internal modules are intentionally left to individual tests
+// This promotes:
+// 1. Explicit test dependencies
+// 2. Better test isolation
+// 3. Easier debugging
+// 4. More maintainable tests
 
-// Mock Validation
-vi.mock("@/lib/validation", () => ({
-  validateFormData: vi.fn(),
-  validateRegistrationInput: vi.fn(),
-  validateSignInInput: vi.fn(),
-}));
-
-// Mock Logging
-vi.mock("@/lib/logging", () => ({
-  logger: {
-    logRequest: vi.fn(),
-    logRequestError: vi.fn(),
-  },
-  createRequestLogger: vi.fn(() => ({
-    log: vi.fn(),
-    logError: vi.fn(),
-  })),
-}));
+// If you need shared mock utilities, create them in testUtils/ folder
+// and import them in individual test files as needed

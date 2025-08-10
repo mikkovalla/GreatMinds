@@ -1,296 +1,464 @@
 /**
- * Test suite for the POST /api/auth/register endpoint.
+ * This demonstrates the preferred approach to writing unit tests with:
+ * - Test-specific mocks (not global mocks)
+ * - Explicit dependencies
+ * - Factory functions for test data
+ * - Clear arrange/act/assert structure
+ * - Isolated test scenarios
  *
- * This test file validates the user registration functionality including:
- * - Successful user registration and automatic sign-in
- * - Form data validation and error handling
- * - Registration input validation
- * - Supabase authentication service integration
- * - User profile creation in the database
- * - Rate limiting protection
- * - Error logging and response handling
- *
- * The tests mock external dependencies including:
- * - Supabase client for authentication and database operations
- * - Security utilities for request validation and response creation
- * - Validation utilities for form and registration data
- * - Logging utilities for request tracking
- *
- * @fileoverview Registration endpoint test suite
- * @module register.test
  */
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { POST } from "../pages/api/auth/register";
 import { supabase } from "@/lib/supabaseClient";
 import * as security from "@/lib/security";
 import * as validation from "@/lib/validation";
 import * as logging from "@/lib/logging";
+import {
+  createMockUser,
+  createMockSession,
+  createMockCookieOptions,
+  createMockAPIContext,
+} from "./testUtils/factories";
 import type { APIContext } from "astro";
-import type {
-  User,
-  AuthError,
-  PostgrestError,
-  Session,
-} from "@supabase/supabase-js";
+
+// Mock external dependencies at the top of the test file
+vi.mock("@/lib/supabaseClient");
+vi.mock("@/lib/security");
+vi.mock("@/lib/validation");
+vi.mock("@/lib/logging");
 
 describe("POST /api/auth/register", () => {
-  const mockRequest = (formData: FormData) => {
-    return {
-      request: {
-        formData: () => Promise.resolve(formData),
-        headers: new Headers({
-          "Content-Type": "application/x-www-form-urlencoded",
+  beforeEach(() => {
+    vi.resetAllMocks();
+  });
+
+  describe("successful registration", () => {
+    it("should register a new user and set session cookies", async () => {
+      // Arrange - Set up test data and mocks
+      const mockUser = createMockUser({
+        id: "user-123",
+        email: "test@example.com",
+      });
+      const mockSession = createMockSession({
+        access_token: "access-token-123",
+        refresh_token: "refresh-token-123",
+        user: mockUser,
+      });
+      const mockCookieOptions = createMockCookieOptions(false); // Dev environment
+      const context = createMockAPIContext();
+
+      // Mock function implementations for this specific test
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: true,
+      });
+      vi.mocked(security.getCookieOptions).mockReturnValue(mockCookieOptions);
+      vi.mocked(validation.validateFormData).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(validation.validateRegistrationInput).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: mockUser, session: mockSession },
+        error: null,
+      });
+      vi.mocked(supabase.from).mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      // Act - Execute the function under test
+      await POST(context as unknown as APIContext);
+
+      // Assert - Verify the expected behavior
+      expect(security.validateAndSecureRequest).toHaveBeenCalledWith(
+        context.request,
+        "REGISTRATION"
+      );
+      expect(security.getCookieOptions).toHaveBeenCalledWith(false); // import.meta.env.PROD
+      expect(supabase.auth.signUp).toHaveBeenCalledWith({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      expect(supabase.from("profiles").insert).toHaveBeenCalledWith([
+        {
+          id: "user-123",
+          email: "test@example.com",
+          role: "Authenticated Free User",
+        },
+      ]);
+
+      // Verify cookies are set with proper options
+      expect(context.__mocks.cookiesSet).toHaveBeenCalledTimes(2);
+      expect(context.__mocks.cookiesSet).toHaveBeenCalledWith(
+        "sb-access-token",
+        "access-token-123",
+        mockCookieOptions
+      );
+      expect(context.__mocks.cookiesSet).toHaveBeenCalledWith(
+        "sb-refresh-token",
+        "refresh-token-123",
+        mockCookieOptions
+      );
+      expect(context.__mocks.redirect).toHaveBeenCalledWith("/");
+      expect(logging.logger.logRequest).toHaveBeenCalledWith(
+        1001,
+        "User registration successful",
+        context.request,
+        { userId: "user-123", email: "test@example.com" }
+      );
+    });
+  });
+
+  describe("validation errors", () => {
+    it("should return 400 for invalid form data", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const mockErrorResponse = new Response("Bad Request", { status: 400 });
+
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: true,
+      });
+      vi.mocked(validation.validateFormData).mockImplementation(() => {
+        throw new Error("Email and password must be provided as strings");
+      });
+      vi.mocked(security.createErrorResponse).mockReturnValue(
+        mockErrorResponse
+      );
+
+      // Act
+      const result = await POST(context as unknown as APIContext);
+
+      // Assert
+      expect(result).toBe(mockErrorResponse);
+      expect(security.createErrorResponse).toHaveBeenCalledWith(
+        400,
+        "Bad Request",
+        "Invalid form data: Email and password must be provided as strings"
+      );
+      expect(logging.logger.logRequestError).toHaveBeenCalledWith(
+        2009,
+        "Invalid form data received",
+        expect.any(Error),
+        context.request
+      );
+    });
+
+    it("should return 400 for invalid registration input", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const mockErrorResponse = new Response("Bad Request", { status: 400 });
+
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: true,
+      });
+      vi.mocked(validation.validateFormData).mockReturnValue({
+        email: "invalid-email",
+        password: "short",
+      });
+      vi.mocked(validation.validateRegistrationInput).mockImplementation(() => {
+        throw new Error("Password must be at least 8 characters");
+      });
+      vi.mocked(security.createErrorResponse).mockReturnValue(
+        mockErrorResponse
+      );
+
+      // Act
+      const result = await POST(context as unknown as APIContext);
+
+      // Assert
+      expect(result).toBe(mockErrorResponse);
+      expect(security.createErrorResponse).toHaveBeenCalledWith(
+        400,
+        "Bad Request",
+        "Invalid registration data: Password must be at least 8 characters"
+      );
+      expect(logging.logger.logRequestError).toHaveBeenCalledWith(
+        2001,
+        "Registration input validation failed",
+        expect.any(Error),
+        context.request,
+        { email: "invalid-email" }
+      );
+    });
+  });
+
+  describe("Supabase errors", () => {
+    it("should return 500 when Supabase signUp fails", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const mockErrorResponse = new Response("Internal Server Error", {
+        status: 500,
+      });
+      const signUpError = {
+        name: "AuthApiError",
+        message: "User already registered",
+        code: "email_already_exists",
+        status: 400,
+        __isAuthError: true,
+      } as any;
+
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: true,
+      });
+      vi.mocked(validation.validateFormData).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(validation.validateRegistrationInput).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: null, session: null },
+        error: signUpError,
+      });
+      vi.mocked(security.createErrorResponse).mockReturnValue(
+        mockErrorResponse
+      );
+
+      // Act
+      const result = await POST(context as unknown as APIContext);
+
+      // Assert
+      expect(result).toBe(mockErrorResponse);
+      expect(security.createErrorResponse).toHaveBeenCalledWith(
+        500,
+        "Internal Server Error",
+        "Could not sign up user."
+      );
+      expect(logging.logger.logRequestError).toHaveBeenCalledWith(
+        4001,
+        "Supabase sign up failed",
+        signUpError,
+        context.request
+      );
+    });
+
+    it("should return 500 when Supabase returns no user data", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const mockErrorResponse = new Response("Internal Server Error", {
+        status: 500,
+      });
+
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: true,
+      });
+      vi.mocked(validation.validateFormData).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(validation.validateRegistrationInput).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: null, session: null },
+        error: null,
+      });
+      vi.mocked(security.createErrorResponse).mockReturnValue(
+        mockErrorResponse
+      );
+
+      // Act
+      const result = await POST(context as unknown as APIContext);
+
+      // Assert
+      expect(result).toBe(mockErrorResponse);
+      expect(security.createErrorResponse).toHaveBeenCalledWith(
+        500,
+        "Internal Server Error",
+        "Could not sign up user."
+      );
+      expect(logging.logger.logRequest).toHaveBeenCalledWith(
+        4001,
+        "Supabase returned no user data after signup",
+        context.request,
+        { email: "test@example.com" }
+      );
+    });
+
+    it("should return 500 when profile creation fails", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const mockUser = createMockUser({
+        id: "user-123",
+        email: "test@example.com",
+      });
+      const mockSession = createMockSession({
+        user: mockUser,
+      });
+      const mockErrorResponse = new Response("Internal Server Error", {
+        status: 500,
+      });
+      const profileError = {
+        message: "Profile creation failed",
+        details: "Constraint violation",
+        hint: "",
+        code: "23505",
+      };
+
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: true,
+      });
+      vi.mocked(validation.validateFormData).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(validation.validateRegistrationInput).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: mockUser, session: mockSession },
+        error: null,
+      });
+      vi.mocked(supabase.from).mockReturnValue({
+        insert: vi.fn().mockResolvedValue({
+          data: null,
+          error: profileError,
+          count: null,
+          status: 500,
+          statusText: "Internal Server Error",
         }),
-        method: "POST",
-      },
-      cookies: {
-        set: vi.fn(),
-      },
-      redirect: vi.fn(),
-    } as unknown as APIContext;
-  };
+      } as any);
+      vi.mocked(security.createErrorResponse).mockReturnValue(
+        mockErrorResponse
+      );
 
-  const mockUser = {
-    id: "123",
-    email: "test@example.com",
-    app_metadata: {},
-    user_metadata: {},
-    aud: "authenticated",
-    created_at: new Date().toISOString(),
-  } as User;
+      // Act
+      const result = await POST(context as unknown as APIContext);
 
-  it("should register a new user successfully and sign them in", async () => {
-    const formData = new FormData();
-    formData.append("email", "test@example.com");
-    formData.append("password", "Password123!");
-
-    const mockSession = {
-      access_token: "access-token",
-      refresh_token: "refresh-token",
-      expires_in: 3600,
-      token_type: "bearer",
-      user: mockUser,
-    } as Session;
-
-    vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
-      valid: true,
+      // Assert
+      expect(result).toBe(mockErrorResponse);
+      expect(security.createErrorResponse).toHaveBeenCalledWith(
+        500,
+        "Internal Server Error",
+        "Could not create user profile."
+      );
+      expect(logging.logger.logRequestError).toHaveBeenCalledWith(
+        5001,
+        "Failed to create user profile",
+        profileError,
+        context.request,
+        { userId: "user-123" }
+      );
     });
-    vi.mocked(validation.validateFormData).mockReturnValue({
-      email: "test@example.com",
-      password: "Password123!",
-    });
-    vi.mocked(validation.validateRegistrationInput).mockReturnValue({
-      email: "test@example.com",
-      password: "Password123!",
-    });
-    vi.mocked(supabase.auth.signUp).mockResolvedValueOnce({
-      data: { user: mockUser, session: mockSession },
-      error: null,
-    });
-    vi.mocked(supabase.from).mockReturnValue({
-      insert: vi.fn().mockResolvedValueOnce({ error: null }),
-    } as any);
-
-    const context = mockRequest(formData);
-    await POST(context);
-
-    expect(security.validateAndSecureRequest).toHaveBeenCalledWith(
-      context.request,
-      "REGISTRATION"
-    );
-    expect(supabase.auth.signUp).toHaveBeenCalledWith({
-      email: "test@example.com",
-      password: "Password123!",
-    });
-    expect(supabase.from("profiles").insert).toHaveBeenCalledWith([
-      { id: "123", email: "test@example.com", role: "Authenticated Free User" },
-    ]);
-    expect(context.cookies.set).toHaveBeenCalledTimes(2);
-    expect(context.cookies.set).toHaveBeenCalledWith(
-      "sb-access-token",
-      mockSession.access_token,
-      expect.any(Object)
-    );
-    expect(context.cookies.set).toHaveBeenCalledWith(
-      "sb-refresh-token",
-      mockSession.refresh_token,
-      expect.any(Object)
-    );
-    expect(context.redirect).toHaveBeenCalledWith("/");
-    expect(logging.logger.logRequest).toHaveBeenCalledWith(
-      1001,
-      "User registration successful",
-      context.request,
-      { userId: "123", email: "test@example.com" }
-    );
   });
 
-  it("should return 400 for invalid form data", async () => {
-    const formData = new FormData();
-    const context = mockRequest(formData);
+  describe("email verification flow", () => {
+    it("should handle successful registration without immediate session (email verification required)", async () => {
+      // Arrange
+      const mockUser = createMockUser({
+        id: "user-123",
+        email: "test@example.com",
+      });
+      const context = createMockAPIContext();
 
-    vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
-      valid: true,
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: true,
+      });
+      vi.mocked(validation.validateFormData).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(validation.validateRegistrationInput).mockReturnValue({
+        email: "test@example.com",
+        password: "Password123!",
+      });
+      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+        data: { user: mockUser, session: null }, // No session when email verification is required
+        error: null,
+      });
+      vi.mocked(supabase.from).mockReturnValue({
+        insert: vi.fn().mockResolvedValue({ error: null }),
+      } as any);
+
+      // Act
+      await POST(context as unknown as APIContext);
+
+      // Assert
+      expect(supabase.from("profiles").insert).toHaveBeenCalledWith([
+        {
+          id: "user-123",
+          email: "test@example.com",
+          role: "Authenticated Free User",
+        },
+      ]);
+
+      // Should not set cookies when no session
+      expect(context.__mocks.cookiesSet).not.toHaveBeenCalled();
+
+      expect(context.__mocks.redirect).toHaveBeenCalledWith("/");
+      expect(logging.logger.logRequest).toHaveBeenCalledWith(
+        1004,
+        "User registration successful, email verification required",
+        context.request,
+        { userId: "user-123", email: "test@example.com" }
+      );
     });
-    vi.mocked(validation.validateFormData).mockImplementation(() => {
-      throw new Error("Email and password must be provided as strings");
-    });
-
-    await POST(context);
-
-    expect(security.createErrorResponse).toHaveBeenCalledWith(
-      400,
-      "Bad Request",
-      "Invalid form data: Email and password must be provided as strings"
-    );
   });
 
-  it("should return 400 for invalid registration input", async () => {
-    const formData = new FormData();
-    formData.append("email", "invalid-email");
-    formData.append("password", "short");
-    const context = mockRequest(formData);
+  describe("unexpected errors", () => {
+    it("should handle unexpected errors gracefully", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const mockErrorResponse = new Response("Internal Server Error", {
+        status: 500,
+      });
+      const unexpectedError = new Error("Unexpected network error");
 
-    vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
-      valid: true,
-    });
-    vi.mocked(validation.validateFormData).mockReturnValue({
-      email: "invalid-email",
-      password: "short",
-    });
-    vi.mocked(validation.validateRegistrationInput).mockImplementation(() => {
-      throw new Error("Validation failed");
-    });
+      vi.mocked(security.validateAndSecureRequest).mockRejectedValue(
+        unexpectedError
+      );
+      vi.mocked(security.createErrorResponse).mockReturnValue(
+        mockErrorResponse
+      );
 
-    await POST(context);
+      // Act
+      const result = await POST(context as unknown as APIContext);
 
-    expect(security.createErrorResponse).toHaveBeenCalledWith(
-      400,
-      "Bad Request",
-      "Invalid registration data: Validation failed"
-    );
+      // Assert
+      expect(result).toBe(mockErrorResponse);
+      expect(security.createErrorResponse).toHaveBeenCalledWith(
+        500,
+        "Internal Server Error",
+        "An unexpected error occurred. Please try again."
+      );
+      expect(logging.logger.logRequestError).toHaveBeenCalledWith(
+        5002,
+        "Unexpected error during registration",
+        unexpectedError,
+        context.request
+      );
+    });
   });
 
-  it("should return 500 if Supabase signUp fails", async () => {
-    const formData = new FormData();
-    formData.append("email", "test@example.com");
-    formData.append("password", "Password123!");
-    const context = mockRequest(formData);
-    const signUpError = {
-      name: "AuthApiError",
-      message: "Supabase error",
-    } as AuthError;
+  describe("rate limiting", () => {
+    it("should block requests when rate limited", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const rateLimitResponse = new Response("Rate limit exceeded", {
+        status: 429,
+      });
 
-    vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
-      valid: true,
-    });
-    vi.mocked(validation.validateFormData).mockReturnValue({
-      email: "test@example.com",
-      password: "Password123!",
-    });
-    vi.mocked(validation.validateRegistrationInput).mockReturnValue({
-      email: "test@example.com",
-      password: "Password123!",
-    });
-    vi.mocked(supabase.auth.signUp).mockResolvedValue({
-      data: { user: null, session: null },
-      error: signUpError,
-    });
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: false,
+        response: rateLimitResponse,
+      });
 
-    await POST(context);
+      // Act
+      const response = await POST(context as unknown as APIContext);
 
-    expect(security.createErrorResponse).toHaveBeenCalledWith(
-      500,
-      "Internal Server Error",
-      "Could not sign up user."
-    );
-    expect(logging.logger.logRequestError).toHaveBeenCalledWith(
-      4001,
-      "Supabase sign up failed",
-      signUpError,
-      context.request
-    );
-  });
-
-  it("should return 500 if creating profile fails", async () => {
-    const formData = new FormData();
-    formData.append("email", "test@example.com");
-    formData.append("password", "Password123!");
-    const context = mockRequest(formData);
-    const profileError = {
-      message: "Profile creation failed",
-      details: "",
-      hint: "",
-      code: "500",
-    } as PostgrestError;
-    const mockSession = {
-      access_token: "access-token",
-      refresh_token: "refresh-token",
-      expires_in: 3600,
-      token_type: "bearer",
-      user: mockUser,
-    } as Session;
-
-    vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
-      valid: true,
+      // Assert
+      expect(response).toBe(rateLimitResponse);
+      expect(logging.logger.logRequest).toHaveBeenCalledWith(
+        3001,
+        "Registration attempt blocked by rate limiter",
+        context.request
+      );
     });
-    vi.mocked(validation.validateFormData).mockReturnValue({
-      email: "test@example.com",
-      password: "Password123!",
-    });
-    vi.mocked(validation.validateRegistrationInput).mockReturnValue({
-      email: "test@example.com",
-      password: "Password123!",
-    });
-    vi.mocked(supabase.auth.signUp).mockResolvedValue({
-      data: { user: mockUser, session: mockSession },
-      error: null,
-    });
-    vi.mocked(supabase.from("profiles").insert).mockResolvedValue({
-      data: null,
-      error: profileError,
-      count: null,
-      status: 500,
-      statusText: "Internal Server Error",
-    });
-
-    await POST(context);
-
-    expect(security.createErrorResponse).toHaveBeenCalledWith(
-      500,
-      "Internal Server Error",
-      "Could not create user profile."
-    );
-    expect(logging.logger.logRequestError).toHaveBeenCalledWith(
-      5001,
-      "Failed to create user profile",
-      profileError,
-      context.request,
-      { userId: "123" }
-    );
-  });
-
-  it("should be blocked by rate limiting", async () => {
-    const formData = new FormData();
-    formData.append("email", "test@example.com");
-    formData.append("password", "Password123!");
-    const context = mockRequest(formData);
-    const rateLimitResponse = new Response("Rate limit exceeded", {
-      status: 429,
-    });
-
-    vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
-      valid: false,
-      response: rateLimitResponse,
-    });
-
-    const response = await POST(context);
-
-    expect(response).toBe(rateLimitResponse);
-    expect(logging.logger.logRequest).toHaveBeenCalledWith(
-      3001,
-      "Registration attempt blocked by rate limiter",
-      context.request
-    );
   });
 });

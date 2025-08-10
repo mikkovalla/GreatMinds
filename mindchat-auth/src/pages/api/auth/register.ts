@@ -137,16 +137,15 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
 
     if (signUpData.session) {
       const cookieOptions = getCookieOptions(import.meta.env.PROD);
-
       cookies.set(
         "sb-access-token",
         signUpData.session.access_token,
-        cookieOptions
+        cookieOptions as any
       );
       cookies.set(
         "sb-refresh-token",
         signUpData.session.refresh_token,
-        cookieOptions
+        cookieOptions as any
       );
 
       logger.logRequest(1001, "User registration successful", request, {

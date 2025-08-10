@@ -141,7 +141,7 @@ export const getCookieOptions = (isProduction: boolean = false) => {
   return {
     httpOnly: true,
     secure: isProduction, // HTTPS only in production
-    sameSite: "lax" as const,
+    sameSite: "lax",
     path: "/",
     maxAge: 60 * 60 * 24 * 7, // 7 days
   };

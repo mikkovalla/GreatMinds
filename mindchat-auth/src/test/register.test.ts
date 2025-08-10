@@ -19,7 +19,6 @@
  * @fileoverview Registration endpoint test suite
  * @module register.test
  */
-import "@/test/setupTests";
 import { describe, it, expect, vi } from "vitest";
 import { POST } from "../pages/api/auth/register";
 import { supabase } from "@/lib/supabaseClient";

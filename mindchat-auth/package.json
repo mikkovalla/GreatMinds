@@ -12,6 +12,7 @@
     "coverage": "vitest run --coverage"
   },
   "dependencies": {
+    "@astrojs/node": "^9.4.0",
     "@astrojs/vue": "^5.1.0",
     "@supabase/supabase-js": "^2.54.0",
     "astro": "^5.12.9",

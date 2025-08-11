@@ -292,3 +292,114 @@ export const createMockStripeCheckoutSession = (
   metadata: {},
   ...overrides,
 });
+
+/**
+ * Creates a mock Stripe billing portal session object
+ */
+export const createMockStripePortalSession = (
+  overrides: Record<string, any> = {}
+) => ({
+  id: "bps_test123456789",
+  object: "billing_portal.session",
+  customer: "cus_test123456789",
+  url: "https://billing.stripe.com/session/bps_test123456789",
+  return_url: "https://example.com/account",
+  created: Math.floor(Date.now() / 1000),
+  ...overrides,
+});
+
+/**
+ * Creates a mock Stripe webhook event object
+ */
+export const createMockWebhookEvent = (
+  eventType: string = "customer.subscription.updated",
+  overrides: Record<string, any> = {}
+) => ({
+  id: "evt_test123456789",
+  object: "event",
+  type: eventType,
+  data: {
+    object: createMockStripeSubscription(),
+  },
+  created: Math.floor(Date.now() / 1000),
+  livemode: false,
+  pending_webhooks: 1,
+  request: {
+    id: "req_test123456789",
+  },
+  ...overrides,
+});
+
+/**
+ * Creates a mock user profile with Stripe fields
+ */
+export const createMockUserProfileWithStripe = (
+  overrides: Record<string, any> = {}
+) => ({
+  id: "user-test123456789",
+  email: "test@example.com",
+  stripe_customer_id: "cus_test123456789",
+  subscription_status: "active",
+  subscription_id: "sub_test123456789",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
+  role: "user",
+  ...overrides,
+});
+
+/**
+ * Creates mock checkout session parameters
+ */
+export const createMockCheckoutParams = (
+  overrides: Record<string, any> = {}
+) => ({
+  userId: "user-test123456789",
+  successUrl: "https://example.com/success",
+  cancelUrl: "https://example.com/cancel",
+  priceId: "price_test123456789",
+  ...overrides,
+});
+
+/**
+ * Creates mock portal session parameters
+ */
+export const createMockPortalParams = (
+  overrides: Record<string, any> = {}
+) => ({
+  customerId: "cus_test123456789",
+  returnUrl: "https://example.com/account",
+  ...overrides,
+});
+
+/**
+ * Creates a mock Supabase database response
+ */
+export const createMockSupabaseResponse = (
+  data: any = null,
+  error: any = null
+) => ({
+  data,
+  error,
+  count: null,
+  status: error ? 400 : 200,
+  statusText: error ? "Bad Request" : "OK",
+});
+
+/**
+ * Creates a mock webhook payload string
+ */
+export const createMockWebhookPayload = (
+  event: Record<string, any> = createMockWebhookEvent()
+): string => JSON.stringify(event);
+
+/**
+ * Creates mock webhook headers
+ */
+export const createMockWebhookHeaders = (
+  signature: string = "t=1234567890,v1=test_signature",
+  overrides: Record<string, string> = {}
+) => ({
+  "stripe-signature": signature,
+  "content-type": "application/json",
+  ...overrides,
+});

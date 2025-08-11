@@ -1,5 +1,5 @@
 ---
-applyTo: "**/*test.ts"
+applyTo: "**"
 ---
 
 # Testing Guidelines: Complete Unit Testing Strategy for JavaScript/TypeScript APIs

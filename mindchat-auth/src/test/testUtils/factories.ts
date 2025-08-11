@@ -97,6 +97,7 @@ export const createMockAPIContext = (
   formData: FormData = createMockRegistrationForm()
 ) => {
   const mockCookiesSet = vi.fn();
+  const mockCookiesDelete = vi.fn();
   const mockRedirect = vi.fn();
 
   return {
@@ -105,12 +106,49 @@ export const createMockAPIContext = (
       set: mockCookiesSet,
       get: vi.fn(),
       has: vi.fn(),
-      delete: vi.fn(),
+      delete: mockCookiesDelete,
     },
     redirect: mockRedirect,
     // Access to mock functions for assertions
     __mocks: {
       cookiesSet: mockCookiesSet,
+      cookiesDelete: mockCookiesDelete,
+      redirect: mockRedirect,
+    },
+  };
+};
+
+/**
+ * Creates a mock APIContext specifically for logout (no form data needed)
+ */
+export const createMockLogoutAPIContext = () => {
+  const mockCookiesSet = vi.fn();
+  const mockCookiesDelete = vi.fn();
+  const mockRedirect = vi.fn();
+
+  const request = {
+    formData: () => Promise.resolve(new FormData()),
+    headers: new Headers({
+      "Content-Type": "application/x-www-form-urlencoded",
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+    }),
+    method: "POST",
+  } as Request;
+
+  return {
+    request,
+    cookies: {
+      set: mockCookiesSet,
+      get: vi.fn(),
+      has: vi.fn(),
+      delete: mockCookiesDelete,
+    },
+    redirect: mockRedirect,
+    // Access to mock functions for assertions
+    __mocks: {
+      cookiesSet: mockCookiesSet,
+      cookiesDelete: mockCookiesDelete,
       redirect: mockRedirect,
     },
   };

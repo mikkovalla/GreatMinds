@@ -8,6 +8,7 @@ const RATE_LIMITS = {
   REGISTRATION: { maxAttempts: 5, windowMs: 60 * 60 * 1000 }, // 5 per hour
   LOGIN: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 per hour
   PASSWORD_RESET: { maxAttempts: 3, windowMs: 60 * 60 * 1000 }, // 3 per hour
+  LOGOUT: { maxAttempts: 10, windowMs: 60 * 60 * 1000 }, // 10 per hour
 } as const;
 
 /**

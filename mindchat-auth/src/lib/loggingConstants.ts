@@ -7,10 +7,10 @@
  * Log levels for filtering and prioritization
  */
 export enum LogLevel {
-  DEBUG = 0,    // Development debugging
-  INFO = 1,     // General information
-  WARN = 2,     // Warning conditions
-  ERROR = 3,    // Error conditions
+  DEBUG = 0, // Development debugging
+  INFO = 1, // General information
+  WARN = 2, // Warning conditions
+  ERROR = 3, // Error conditions
   CRITICAL = 4, // Critical system failures
 }
 
@@ -27,7 +27,7 @@ export enum AuthEvent {
   PASSWORD_RESET_REQUESTED = 1006,
   PASSWORD_RESET_SUCCESS = 1007,
   SESSION_REFRESHED = 1008,
-  
+
   // Failure Events (1100-1199)
   REGISTRATION_FAILED = 1101,
   LOGIN_FAILED = 1102,
@@ -112,15 +112,46 @@ export enum RequestError {
 }
 
 /**
+ * Stripe Integration Events (7000-7999)
+ */
+export enum StripeEvent {
+  // Success Events (7000-7099)
+  CLIENT_INITIALIZED = 7001,
+  CUSTOMER_CREATED = 7002,
+  CUSTOMER_RETRIEVED = 7003,
+  CHECKOUT_SESSION_CREATED = 7004,
+  PORTAL_SESSION_CREATED = 7005,
+  WEBHOOK_RECEIVED = 7006,
+  WEBHOOK_PROCESSED = 7007,
+  SUBSCRIPTION_SYNCED = 7008,
+  CUSTOMER_UPDATED = 7009,
+
+  // Failure Events (7100-7199)
+  CLIENT_INITIALIZATION_FAILED = 7101,
+  CUSTOMER_CREATION_FAILED = 7102,
+  CUSTOMER_RETRIEVAL_FAILED = 7103,
+  CHECKOUT_SESSION_FAILED = 7104,
+  PORTAL_SESSION_FAILED = 7105,
+  WEBHOOK_VERIFICATION_FAILED = 7106,
+  WEBHOOK_PROCESSING_FAILED = 7107,
+  SUBSCRIPTION_SYNC_FAILED = 7108,
+  INVALID_WEBHOOK_SIGNATURE = 7109,
+  STRIPE_API_ERROR = 7110,
+  DUPLICATE_CUSTOMER = 7111,
+  CUSTOMER_NOT_FOUND = 7112,
+}
+
+/**
  * All error codes combined for type safety
  */
-export type ErrorCode = 
-  | AuthEvent 
-  | ValidationError 
-  | SecurityEvent 
-  | SupabaseError 
-  | SystemError 
-  | RequestError;
+export type ErrorCode =
+  | AuthEvent
+  | ValidationError
+  | SecurityEvent
+  | SupabaseError
+  | SystemError
+  | RequestError
+  | StripeEvent;
 
 /**
  * Log entry structure for consistent logging
@@ -151,12 +182,13 @@ export type LogEntry = {
  * Event categories for filtering and analysis
  */
 export enum EventCategory {
-  AUTHENTICATION = 'auth',
-  VALIDATION = 'validation',
-  SECURITY = 'security',
-  SUPABASE = 'supabase',
-  SYSTEM = 'system',
-  REQUEST = 'request',
+  AUTHENTICATION = "auth",
+  VALIDATION = "validation",
+  SECURITY = "security",
+  SUPABASE = "supabase",
+  SYSTEM = "system",
+  REQUEST = "request",
+  STRIPE = "stripe",
 }
 
 /**
@@ -169,6 +201,7 @@ export const getEventCategory = (code: ErrorCode): EventCategory => {
   if (code >= 4000 && code < 5000) return EventCategory.SUPABASE;
   if (code >= 5000 && code < 6000) return EventCategory.SYSTEM;
   if (code >= 6000 && code < 7000) return EventCategory.REQUEST;
+  if (code >= 7000 && code < 8000) return EventCategory.STRIPE;
   return EventCategory.SYSTEM; // fallback
 };
 
@@ -177,46 +210,64 @@ export const getEventCategory = (code: ErrorCode): EventCategory => {
  */
 export const getLogLevel = (code: ErrorCode): LogLevel => {
   // Critical system failures
-  if ([
-    SystemError.INTERNAL_SERVER_ERROR,
-    SystemError.SERVICE_UNAVAILABLE,
-    SystemError.MEMORY_LIMIT_EXCEEDED,
-    SupabaseError.CONNECTION_FAILED,
-  ].includes(code as any)) {
+  if (
+    [
+      SystemError.INTERNAL_SERVER_ERROR,
+      SystemError.SERVICE_UNAVAILABLE,
+      SystemError.MEMORY_LIMIT_EXCEEDED,
+      SupabaseError.CONNECTION_FAILED,
+      StripeEvent.CLIENT_INITIALIZATION_FAILED,
+      StripeEvent.STRIPE_API_ERROR,
+    ].includes(code as any)
+  ) {
     return LogLevel.CRITICAL;
   }
-  
+
   // Security events are generally errors
   if (code >= 3000 && code < 4000) {
     return LogLevel.ERROR;
   }
-  
+
   // Authentication failures
-  if ([
-    AuthEvent.REGISTRATION_FAILED,
-    AuthEvent.LOGIN_FAILED,
-    AuthEvent.EMAIL_VERIFICATION_FAILED,
-    AuthEvent.PASSWORD_RESET_FAILED,
-  ].includes(code as any)) {
+  if (
+    [
+      AuthEvent.REGISTRATION_FAILED,
+      AuthEvent.LOGIN_FAILED,
+      AuthEvent.EMAIL_VERIFICATION_FAILED,
+      AuthEvent.PASSWORD_RESET_FAILED,
+    ].includes(code as any)
+  ) {
     return LogLevel.ERROR;
   }
-  
+
+  // Stripe failures
+  if (code >= 7100 && code < 7200) {
+    return LogLevel.ERROR;
+  }
+
   // Validation errors
   if (code >= 2000 && code < 3000) {
     return LogLevel.WARN;
   }
-  
+
   // Success events
-  if ([
-    AuthEvent.REGISTRATION_SUCCESS,
-    AuthEvent.LOGIN_SUCCESS,
-    AuthEvent.LOGOUT_SUCCESS,
-    AuthEvent.EMAIL_VERIFIED,
-    AuthEvent.PASSWORD_RESET_SUCCESS,
-  ].includes(code as any)) {
+  if (
+    [
+      AuthEvent.REGISTRATION_SUCCESS,
+      AuthEvent.LOGIN_SUCCESS,
+      AuthEvent.LOGOUT_SUCCESS,
+      AuthEvent.EMAIL_VERIFIED,
+      AuthEvent.PASSWORD_RESET_SUCCESS,
+    ].includes(code as any)
+  ) {
     return LogLevel.INFO;
   }
-  
+
+  // Stripe success events
+  if (code >= 7000 && code < 7100) {
+    return LogLevel.INFO;
+  }
+
   // Default to INFO for other events
   return LogLevel.INFO;
 };

@@ -51,6 +51,14 @@ export const envSchema = z.object({
   PUBLIC_SUPABASE_ANON_KEY: z
     .string()
     .min(1, "Supabase anonymous key is required"),
+  STRIPE_SECRET_KEY: z
+    .string()
+    .min(1, "Stripe secret key is required")
+    .regex(/^sk_/, "Stripe secret key must start with 'sk_'"),
+  STRIPE_WEBHOOK_SECRET: z
+    .string()
+    .min(1, "Stripe webhook secret is required")
+    .regex(/^whsec_/, "Stripe webhook secret must start with 'whsec_'"),
 });
 
 /**
@@ -67,6 +75,8 @@ export const validateEnvironment = (): ValidatedEnv => {
   const result = envSchema.safeParse({
     PUBLIC_SUPABASE_URL: import.meta.env.PUBLIC_SUPABASE_URL,
     PUBLIC_SUPABASE_ANON_KEY: import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
+    STRIPE_SECRET_KEY: import.meta.env.STRIPE_SECRET_KEY,
+    STRIPE_WEBHOOK_SECRET: import.meta.env.STRIPE_WEBHOOK_SECRET,
   });
 
   if (!result.success) {

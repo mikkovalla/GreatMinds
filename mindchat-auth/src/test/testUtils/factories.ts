@@ -9,6 +9,12 @@
 import { vi } from "vitest";
 import type { User, Session } from "@supabase/supabase-js";
 
+// Type for Stripe-specific environment variables
+type StripeEnvVars = {
+  STRIPE_SECRET_KEY: string;
+  STRIPE_WEBHOOK_SECRET: string;
+};
+
 /**
  * Creates a mock Supabase User object
  */
@@ -153,3 +159,136 @@ export const createMockLogoutAPIContext = () => {
     },
   };
 };
+
+/**
+ * Creates mock Stripe configuration options
+ */
+export const createMockStripeConfig = (
+  overrides: Record<string, any> = {}
+) => ({
+  apiVersion: "2025-07-30.basil",
+  typescript: true,
+  appInfo: {
+    name: "mindchat-auth",
+    version: "0.0.1",
+    url: "https://github.com/mikkovalla/GreatMinds",
+  },
+  ...overrides,
+});
+
+/**
+ * Creates mock environment variable configuration
+ */
+export const createMockEnvironment = (
+  overrides: Partial<StripeEnvVars> = {}
+): StripeEnvVars => ({
+  STRIPE_SECRET_KEY: "sk_test_123456789",
+  STRIPE_WEBHOOK_SECRET: "whsec_test_123456789",
+  ...overrides,
+});
+
+/**
+ * Creates a mock Stripe client instance
+ */
+export const createMockStripeClient = () => ({
+  customers: {
+    create: vi.fn(),
+    retrieve: vi.fn(),
+    update: vi.fn(),
+  },
+  subscriptions: {
+    create: vi.fn(),
+    retrieve: vi.fn(),
+    update: vi.fn(),
+    cancel: vi.fn(),
+  },
+  checkout: {
+    sessions: {
+      create: vi.fn(),
+      retrieve: vi.fn(),
+    },
+  },
+  billingPortal: {
+    sessions: {
+      create: vi.fn(),
+    },
+  },
+  webhooks: {
+    constructEvent: vi.fn(),
+  },
+});
+
+/**
+ * Creates a mock Stripe customer object
+ */
+export const createMockStripeCustomer = (
+  overrides: Record<string, any> = {}
+) => ({
+  id: "cus_test123456789",
+  object: "customer",
+  email: "test@example.com",
+  created: Math.floor(Date.now() / 1000),
+  currency: "eur",
+  default_source: null,
+  description: null,
+  discount: null,
+  invoice_prefix: "ABC123",
+  livemode: false,
+  metadata: {},
+  shipping: null,
+  sources: { data: [] },
+  subscriptions: { data: [] },
+  tax_exempt: "none",
+  ...overrides,
+});
+
+/**
+ * Creates a mock Stripe subscription object
+ */
+export const createMockStripeSubscription = (
+  overrides: Record<string, any> = {}
+) => ({
+  id: "sub_test123456789",
+  object: "subscription",
+  customer: "cus_test123456789",
+  status: "active",
+  current_period_start: Math.floor(Date.now() / 1000),
+  current_period_end: Math.floor(Date.now() / 1000) + 2592000, // 30 days
+  created: Math.floor(Date.now() / 1000),
+  currency: "eur",
+  items: {
+    data: [
+      {
+        id: "si_test123456789",
+        price: {
+          id: "price_test123456789",
+          unit_amount: 2000, // €20.00
+          currency: "eur",
+          recurring: { interval: "month" },
+        },
+      },
+    ],
+  },
+  metadata: {},
+  ...overrides,
+});
+
+/**
+ * Creates a mock Stripe checkout session object
+ */
+export const createMockStripeCheckoutSession = (
+  overrides: Record<string, any> = {}
+) => ({
+  id: "cs_test123456789",
+  object: "checkout.session",
+  customer: "cus_test123456789",
+  mode: "subscription",
+  status: "open",
+  url: "https://checkout.stripe.com/pay/cs_test123456789",
+  success_url: "https://example.com/success",
+  cancel_url: "https://example.com/cancel",
+  created: Math.floor(Date.now() / 1000),
+  currency: "eur",
+  metadata: {},
+  ...overrides,
+});

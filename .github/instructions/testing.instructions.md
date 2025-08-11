@@ -1,3 +1,7 @@
+---
+applyTo: "**/*test.ts"
+---
+
 # Testing Guidelines: Complete Unit Testing Strategy for JavaScript/TypeScript APIs
 
 ## Table of Contents
@@ -54,6 +58,7 @@ Using factories ensures:
 
 ### Anti-Patterns Avoided
 
+❌ **Mocking business logic**: Never mock implementation details or business logic. Always test the real behavior.
 ❌ **Global Mocks**: Hard to debug, create hidden dependencies  
 ❌ **Shared Test State**: Causes cascade failures between tests  
 ❌ **Magic Values**: Makes tests hard to understand and maintain  

@@ -2,36 +2,62 @@
 
 ## Project Overview
 
-GreatMinds is a user & subscription management system built with Astro + Supabase. The main application is `mindchat-auth/` - an Astro web app focused on authentication with Vue.js integration.
+GreatMinds is a secure authentication-focused web application built with Astro 5.x + Supabase. The main application is `mindchat-auth/` - an SSR (server-side rendered) authentication system with production-grade security features.
 
-## Architecture & Key Patterns
+## Architecture & Critical Patterns
 
 ### Core Stack
 
-- **Frontend**: Astro 5.x with Vue.js components (`@astrojs/vue`)
-- **Backend**: Supabase (BaaS) for auth, database, and real-time features
-- **Validation**: Zod for runtime type checking and input validation
-- **Styling**: Custom CSS with CSS variables and 3D effects (see `global.css`)
+- **Frontend**: Astro 5.x with Vue.js components, SSR mode (`output: "server"`)
+- **Backend**: Supabase BaaS for auth, PostgreSQL database, and real-time features
+- **Validation**: Zod 4.x for runtime type checking and security validation
+- **Testing**: Vitest with factory pattern for isolated unit tests
+- **Security**: Comprehensive rate limiting, OWASP headers, structured logging
 
-### Authentication Flow
+### Authentication Architecture
 
-- **Supabase Client**: Configured in `src/lib/supabaseClient.ts` with persistent sessions
-- **API Endpoints**: Located in `src/pages/api/auth/` (register.ts, signin.ts, signout.ts)
-- **Session Management**: Uses HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
-- **Environment**: TypeScript interfaces in `src/env.d.ts` define required env vars
+The authentication flow follows a secure server-side pattern:
 
-### Project Structure
+1. **API Endpoints** (`src/pages/api/auth/`): Server-side authentication handlers
+2. **Session Management**: HTTP-only cookies (`sb-access-token`, `sb-refresh-token`)
+3. **Security Middleware**: Rate limiting, input validation, comprehensive logging
+4. **Database Integration**: Automatic user profile creation with role-based access
 
-```
-mindchat-auth/
-├── src/
-│   ├── lib/           # Shared utilities (Supabase client, validation schemas)
-│   ├── pages/         # File-based routing
-│   │   ├── api/       # Server endpoints
-│   │   └── *.astro    # Page components
-│   └── styles/        # Global CSS with custom properties
-├── public/            # Static assets
-└── .env               # Environment configuration
+### Critical Security Implementation
+
+Every endpoint follows this exact pattern:
+
+```typescript
+export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+  // 1. Security validation & rate limiting
+  const securityCheck = await validateAndSecureRequest(
+    request,
+    "OPERATION_TYPE"
+  );
+  if (!securityCheck.valid) return securityCheck.response!;
+
+  // 2. Input validation with Zod
+  const formData = await request.formData();
+  const formInput = validateFormData(formData);
+  const validatedInput = validateOperationInput(formInput);
+
+  // 3. Supabase operation with error handling
+  const { data, error } = await supabase.auth.operation(validatedInput);
+  if (error) {
+    logger.logRequestError(code, message, error, request);
+    return createErrorResponse(500, "Internal Server Error", "Message");
+  }
+
+  // 4. Session handling & logging
+  if (data.session) {
+    const cookieOptions = getCookieOptions(import.meta.env.PROD);
+    cookies.set("sb-access-token", data.session.access_token, cookieOptions);
+    cookies.set("sb-refresh-token", data.session.refresh_token, cookieOptions);
+  }
+
+  logger.logRequest(successCode, "Success message", request, context);
+  return redirect("/");
+};
 ```
 
 ## Development Workflow
@@ -39,115 +65,142 @@ mindchat-auth/
 ### Essential Commands
 
 ```bash
-# Development server (runs on localhost:4321)
-npm run dev
+# Development with hot reload
+npm run dev              # localhost:4321
+
+# Testing (critical for auth)
+npm test                 # Watch mode
+npm run test:run         # Single run
+npm run coverage         # Coverage report
 
 # Production build
 npm run build && npm run preview
-
-# Add integrations
-npx astro add [integration]
 ```
 
 ### Environment Setup
 
-1. Copy `.env.example` to `.env`
-2. Configure Supabase credentials:
-   - `PUBLIC_SUPABASE_URL`: Project URL from Supabase dashboard
-   - `PUBLIC_SUPABASE_ANON_KEY`: Anonymous key for client-side auth
+Required environment variables in `.env`:
 
-### MCP Integration
+```bash
+PUBLIC_SUPABASE_URL=your_supabase_project_url
+PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+```
 
-The project uses Model Context Protocol servers (see `.vscode/mcp.json`):
+### Database Schema (Supabase)
 
-- **Supabase MCP**: Database operations and schema management
-- **Stripe MCP**: Payment processing integration
-- **Astro Docs MCP**: Framework documentation access
+Key tables for authentication flow:
 
-## Code Conventions
+- `auth.users` - Supabase managed user accounts
+- `public.profiles` - Application user profiles (id, email, stripe_customer_id, role)
+- `public.subscription_status` - User subscription data
+- `public.entitlements` - Feature access control
 
-### API Endpoints
+## Critical Code Patterns
 
-- Use `APIRoute` type from Astro for proper typing
-- Follow RESTful patterns: POST for mutations, GET for reads
-- Error responses should be consistent JSON format
-- Always validate inputs with Zod schemas
-- Handle Supabase errors gracefully
+### TypeScript Conventions
 
-### Styling Approach
+Project's Typescript conventions are found in `.github/instructions/typescript.instructions.md`.
+These Typescript rules must be followed at all times.
 
-- CSS custom properties defined in `:root` for theming
-- Component-scoped styles preferred over global
-- 3D effects and animations are part of the design language
-- Dark theme with gold accent colors (`--gold-bright`, `--gold-medium`)
+### Validation Pattern (Zod)
 
-### Security Patterns
+All input validation uses standardized Zod schemas in `src/lib/validation.ts`:
 
-- Environment variables must be prefixed with `PUBLIC_` for client access
-- Sensitive operations happen server-side in API routes
-- Input validation is mandatory for all user-facing endpoints
-- Supabase RLS (Row Level Security) should be enabled for data protection
+```typescript
+// Password: 8+ chars, upper, lower, number, special char
+const passwordSchema = z
+  .string()
+  .min(8)
+  .regex(/[a-z]/, "lowercase required")
+  .regex(/[A-Z]/, "uppercase required")
+  .regex(/\d/, "number required")
+  .regex(/[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/, "special char required");
 
-## Common Tasks
+export const registerSchema = z.object({
+  email: emailSchema,
+  password: passwordSchema,
+});
+```
 
-### Adding New Auth Endpoints
+### Security Pattern (Rate Limiting)
 
-1. Create in `src/pages/api/auth/[name].ts`
-2. Import Supabase client from `src/lib/supabaseClient.ts`
-3. Add Zod validation schemas
-4. Follow cookie management patterns for session handling
+Security utilities in `src/lib/security.ts` provide:
 
-### Integrating External Services
+- **Rate Limiting**: 5 registration/hour, 10 login/hour per IP
+- **Security Headers**: CSP, XSS protection, frame denial
+- **Input Sanitization**: Trim, normalize, size validation
 
-- Stripe configuration already available via MCP
-- Use environment variables for API keys
-- External webhooks can be added to `src/pages/api/`
+### Logging Pattern (Structured)
+
+Comprehensive logging system with error codes (`src/lib/logging.ts`):
+
+- **1000-1999**: Authentication events (success/failure)
+- **2000-2999**: Validation errors
+- **3000-3999**: Security events (rate limiting)
+- **4000-4999**: Supabase integration errors
+- **5000-5999**: System/server errors
+
+Usage: `logger.logRequest(1001, "Registration successful", request, { userId })`
+
+### Testing
+
+- Testing is specifically detailed in `.github/instructions/testing.instructions.md`.
+- This file acts as the single source of truth for testing practices and guidelines.
+- Test examples can be found in the `src/test` directory.
+
+## MCP Integration & Development Tools
+
+The project uses Model Context Protocol for enhanced development:
+
+- **Supabase MCP** (`.vscode/mcp.json`): Direct database schema access
+- **Stripe MCP**: Payment integration testing
+- **Astro Docs MCP**: Framework documentation
+- **Semgrep MCP**: Security vulnerability scanning
+
+## Critical Files & Locations
+
+**Core Authentication:**
+
+- `src/lib/supabaseClient.ts` - Supabase client with persistent sessions
+- `src/pages/api/auth/register.ts` - User registration endpoint (example implementation)
+- `src/lib/security.ts` - Security middleware and utilities
+- `src/lib/validation.ts` - Input validation schemas
+
+**Configuration:**
+
+- `astro.config.mjs` - SSR mode, Vue integration, Node adapter
+- `vitest.config.ts` - Test configuration with path aliases
+- `src/env.d.ts` - TypeScript environment variable definitions
+
+**Documentation:**
+
+- `.github/docs/database.schema.md` - Database structure
+- `.github/docs/Logging.md` - Logging system documentation
+
+## Common Implementation Tasks
+
+### Adding New Features
+
+The workflow in all cases is the following:
+
+1. Plan the feature with a detailed description and task list
+2. Write tests for the feature
+3. Write the implementation code
+
+Every step is reviewed by the developer before the next one begins.
+
+### Adding Endpoints
+
+1. Follow the security pattern above exactly
+2. Follow project TypeScript conventions found in `.github/instructions/typescript.instructions.md`
+3. Add rate limit type to `RATE_LIMITS` in `security.ts`
+4. Add Zod validation schema to `validation.ts`
+5. Add error codes to `loggingConstants.ts`
+6. Write comprehensive tests following the testing guidelines in `.github/instructions/testing.instructions.md`
 
 ### Database Operations
 
-- Use Supabase MCP server for schema changes
-- Client operations through the configured Supabase client
-- Real-time subscriptions supported via Supabase
-
-## Critical Files
-
-- `src/lib/supabaseClient.ts`: Core authentication client
-- `src/env.d.ts`: TypeScript environment interface
-- `astro.config.mjs`: Framework configuration
-- `.vscode/mcp.json`: Development tooling setup
-- `src/styles/global.css`: Global styles and CSS variables
-- `src/lib/loggingConstants.ts`: Logging constants
-- `src/lib/logging.ts`: Logging utilities
-- `src/lib/validation.ts`: Input validation schemas
-- `src/lib/security.ts`: Security-related utilities
-- `.github/docs/database.schema.md`: Database schema documentation
-- `.github/docs/Logging.md`: Logging documentation
-
-## Critical thinking
-
-After any context change (viewing new files, running commands, or receiving tool outputs), use the "mcp_think" tool to organize your reasoning before responding.
-
-Specifically, always use the think tool when:
-
-- After examining file contents or project structure
-- After running terminal commands or analyzing their outputs
-- After receiving search results or API responses
-- Before making code suggestions or explaining complex concepts
-- When transitioning between different parts of a task
-
-When using the think tool:
-
-- List the specific rules or constraints that apply to the current task
-- Check if all required information is collected
-- Verify that your planned approach is correct
-- Break down complex problems into clearly defined steps
-- Analyze outputs from other tools thoroughly
-- Plan multi-step approaches before executing them
-
-The think tool has been proven to improve performance by up to 54% on complex tasks, especially when working with multiple tools or following detailed policies.
-
-- Always ensure you have the latest context before proceeding with any task
-- Use the think tool to confirm your understanding of the task and context
+Use Supabase MCP for schema changes. Client operations use the configured client with RLS policies.
 
 ## Documentation
 

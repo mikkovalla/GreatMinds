@@ -1,5 +1,15 @@
 # GreatMinds Copilot Instructions
 
+## IMPORTANT
+
+FOR NEW FEATURES AND LOGIC CHANGES, ALWAYS FOLLOW THE PATTERN:
+
+1. PLAN: Outline the feature or change, including requirements and potential impact. Create task list of the implementation.
+2. WRITE TESTS: Use `testing.instructions.ts` for guidance.
+3. IMPLEMENT: Write the code. Reference instruction files for coding standards and patterns.
+
+AFTER EACH STEP, CONSULT THE HUMAN FOR REVIEW. ONLY MOVE TO NEXT STEP WHEN GIVEN EXPLICIT PERMISSION TO DO SO.
+
 ## Project Overview
 
 GreatMinds is a secure authentication-focused web application built with Astro 5.x + Supabase. The main application is `mindchat-auth/` - an SSR (server-side rendered) authentication system with production-grade security features.

@@ -1,5 +1,6 @@
 ---
-
+import Layout from '../components/Layout.vue'
+import '../styles/global.css'
 ---
 
 <html lang="en">
@@ -8,9 +9,28 @@
 		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
 		<meta name="viewport" content="width=device-width" />
 		<meta name="generator" content={Astro.generator} />
-		<title>Astro</title>
+		<title>MindChat - Authentication</title>
 	</head>
 	<body>
-		<h1>Astro</h1>
+		<Layout client:load>
+			<div class="container" style="padding: 2rem 5%; max-width: var(--main-column-width); margin: 0 auto;">
+				<div class="homepage-header">
+					<h1>Welcome to MindChat</h1>
+					<h2>Chat with history's greatest minds</h2>
+				</div>
+				
+				<div class="content" style="text-align: center; margin-top: 2rem;">
+					<p style="font-size: 1.2rem; opacity: 0.9; margin-bottom: 2rem;">
+						Experience conversations with writers, thinkers, and scientists from across history.
+					</p>
+					
+					<div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
+						<a href="/writers" class="button">Explore Writers</a>
+						<a href="/thinkers" class="button">Discover Thinkers</a>
+						<a href="/scientists" class="button">Meet Scientists</a>
+					</div>
+				</div>
+			</div>
+		</Layout>
 	</body>
 </html>

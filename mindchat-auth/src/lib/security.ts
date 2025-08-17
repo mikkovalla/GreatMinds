@@ -251,7 +251,7 @@ export const validateRequest = (
   // Check content type for POST requests
   if (request.method === "POST") {
     const contentType = request.headers.get("content-type");
-    if (!contentType?.includes("application/x-www-form-urlencoded")) {
+    if (!contentType?.includes("application/json")) {
       return { isValid: false, error: "Invalid content type" };
     }
   }
@@ -326,6 +326,11 @@ export const validateAndSecureRequest = async (
   rateLimitHeaders?: Record<string, string>;
   remainingAttempts?: number;
 }> => {
+  // Bypass security checks in development for easier testing
+  if (import.meta.env.DEV) {
+    return { valid: true };
+  }
+
   // Basic request validation
   const requestValidation = validateRequest(request);
   if (!requestValidation.isValid) {

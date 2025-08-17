@@ -91,9 +91,16 @@
         </div>
 
         <div class="nav-auth" v-else>
-          <Button variant="ghost" size="small" @click="handleLogout">
-            Logout
-          </Button>
+          <div class="user-menu">
+            <button class="user-menu-button" @click="toggleUserMenu">
+              <span class="user-avatar"></span>
+            </button>
+            <div v-if="userMenuOpen" class="user-menu-dropdown">
+              <a href="/profile">Profile</a>
+              <a href="/profile?tab=subscription">Manage Subscription</a>
+              <button @click="handleLogout">Log Out</button>
+            </div>
+          </div>
         </div>
 
         <!-- Bouton hamburger -->
@@ -139,6 +146,7 @@ const emit = defineEmits<{
 
 // Mobile menu state
 const mobileMenuOpen = ref(false);
+const userMenuOpen = ref(false);
 
 // Language dropdown state
 const languageDropdownOpen = ref(false);
@@ -186,6 +194,10 @@ const toggleMobileMenu = (): void => {
   mobileMenuOpen.value = !mobileMenuOpen.value;
 };
 
+const toggleUserMenu = (): void => {
+  userMenuOpen.value = !userMenuOpen.value;
+};
+
 const closeMobileMenu = (): void => {
   mobileMenuOpen.value = false;
 };
@@ -224,6 +236,9 @@ const handleDocumentClick = (event: Event): void => {
   }
   if (mobileMenuOpen.value && !target?.closest(".hamburger, .nav-links")) {
     mobileMenuOpen.value = false;
+  }
+  if (userMenuOpen.value && !target?.closest(".user-menu")) {
+    userMenuOpen.value = false;
   }
 };
 
@@ -326,6 +341,56 @@ onUnmounted(() => {
   gap: 0.75rem;
   margin-left: 1rem;
   align-items: center;
+}
+
+.user-menu {
+  position: relative;
+}
+
+.user-menu-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.user-avatar {
+  display: block;
+  width: 40px;
+  height: 40px;
+  background-color: var(--gold-medium);
+  border-radius: 50%;
+}
+
+.user-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--component-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 0.5rem 0;
+  min-width: 150px;
+  z-index: 10;
+}
+
+.user-menu-dropdown a,
+.user-menu-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 1rem;
+  color: var(--text-color);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.user-menu-dropdown a:hover,
+.user-menu-dropdown button:hover {
+  background-color: var(--component-bg-hover);
+  color: var(--gold-bright);
 }
 
 .mobile-auth {

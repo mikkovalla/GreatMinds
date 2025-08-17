@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type { APIRoute } from "astro";
 import { supabase } from "@/lib/supabaseClient";
 import {
@@ -5,7 +6,7 @@ import {
   createErrorResponse,
   getCookieOptions,
 } from "@/lib/security";
-import { validateFormData, validateRegistrationInput } from "@/lib/validation";
+import { validateJsonBody, validateRegistrationInput } from "@/lib/validation";
 import { logger } from "@/lib/logging";
 
 /**
@@ -32,48 +33,55 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       "REGISTRATION"
     );
     if (!securityCheck.valid) {
-      logger.logRequest(
-        3001,
-        "Registration attempt blocked by rate limiter",
-        request
-      );
+      const message =
+        securityCheck.response?.status === 429
+          ? "Registration attempt blocked by rate limiter"
+          : "Registration attempt blocked by security check";
+      logger.logRequest(3001, message, request);
       return securityCheck.response!;
-    }
-
-    const formData = await request.formData();
-    let formInput: { email: string; password: string };
-
-    try {
-      formInput = validateFormData(formData);
-    } catch (error) {
-      logger.logRequestError(
-        2009,
-        "Invalid form data received",
-        error as Error,
-        request
-      );
-      return createErrorResponse(
-        400,
-        "Bad Request",
-        `Invalid form data: ${(error as Error).message}`
-      );
     }
 
     let validatedInput;
     try {
+      const body = await request.json();
+      const formInput = validateJsonBody(body);
       validatedInput = validateRegistrationInput(formInput);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        logger.logRequestError(
+          2001,
+          "Registration input validation failed",
+          error,
+          request
+        );
+        return createErrorResponse(400, "Bad Request", "Invalid credentials");
+      }
+
+      if (error instanceof Error) {
+        logger.logRequestError(
+          2009,
+          "Invalid form data received",
+          error,
+          request
+        );
+        return createErrorResponse(
+          400,
+          "Bad Request",
+          `Invalid JSON body: ${error.message}`
+        );
+      }
+
+      // Fallback for non-Error objects
       logger.logRequestError(
-        2001,
-        "Registration input validation failed",
+        5002,
+        "Unexpected validation error",
         error as Error,
-        request,
-        { email: formInput.email }
+        request
       );
       return createErrorResponse(
-        400,
-        "Bad Request",
-        `Invalid registration data: ${(error as Error).message}`
+        500,
+        "Internal Server Error",
+        "An unexpected error occurred during validation."
       );
     }
 

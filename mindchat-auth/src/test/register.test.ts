@@ -8,6 +8,7 @@
  *
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { z } from "zod";
 import { POST } from "../pages/api/auth/register";
 import { supabase } from "@/lib/supabaseClient";
 import * as security from "@/lib/security";
@@ -18,6 +19,7 @@ import {
   createMockSession,
   createMockCookieOptions,
   createMockAPIContext,
+  createMockJsonRequest,
 } from "./testUtils/factories";
 import type { APIContext } from "astro";
 
@@ -52,7 +54,7 @@ describe("POST /api/auth/register", () => {
         valid: true,
       });
       vi.mocked(security.getCookieOptions).mockReturnValue(mockCookieOptions);
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockResolvedValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -76,7 +78,6 @@ describe("POST /api/auth/register", () => {
         context.request,
         "REGISTRATION"
       );
-      expect(security.getCookieOptions).toHaveBeenCalledWith(false); // import.meta.env.PROD
       expect(supabase.auth.signUp).toHaveBeenCalledWith({
         email: "test@example.com",
         password: "Password123!",
@@ -108,20 +109,20 @@ describe("POST /api/auth/register", () => {
         context.request,
         { userId: "user-123", email: "test@example.com" }
       );
+      expect(security.getCookieOptions).toHaveBeenCalledWith(false); // import.meta.env.PROD
     });
   });
 
   describe("validation errors", () => {
-    it("should return 400 for invalid form data", async () => {
+    it("should return 400 for invalid json body", async () => {
       // Arrange
-      const context = createMockAPIContext();
+      const request = createMockJsonRequest({ email: "invalid" });
+      const context = createMockAPIContext({ request });
       const mockErrorResponse = new Response("Bad Request", { status: 400 });
+      vi.spyOn(request, "json").mockRejectedValue(new Error("Malformed JSON"));
 
       vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
         valid: true,
-      });
-      vi.mocked(validation.validateFormData).mockImplementation(() => {
-        throw new Error("Email and password must be provided as strings");
       });
       vi.mocked(security.createErrorResponse).mockReturnValue(
         mockErrorResponse
@@ -135,7 +136,7 @@ describe("POST /api/auth/register", () => {
       expect(security.createErrorResponse).toHaveBeenCalledWith(
         400,
         "Bad Request",
-        "Invalid form data: Email and password must be provided as strings"
+        expect.stringContaining("Invalid JSON body")
       );
       expect(logging.logger.logRequestError).toHaveBeenCalledWith(
         2009,
@@ -145,20 +146,35 @@ describe("POST /api/auth/register", () => {
       );
     });
 
-    it("should return 400 for invalid registration input", async () => {
+    it("should return 400 for invalid credentials", async () => {
       // Arrange
-      const context = createMockAPIContext();
+      const request = createMockJsonRequest({
+        email: "test@example.com",
+        password: "short",
+      });
+      const context = createMockAPIContext({ request });
       const mockErrorResponse = new Response("Bad Request", { status: 400 });
+
+      // Create a proper ZodError for validation failure
+      const zodError = new z.ZodError([
+        {
+          code: "too_small",
+          minimum: 8,
+          inclusive: true,
+          message: "Password must be at least 8 characters long",
+          path: ["password"],
+        } as any, // Type assertion to bypass strict typing for test
+      ]);
 
       vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
         valid: true,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
-        email: "invalid-email",
+      vi.mocked(validation.validateJsonBody).mockResolvedValue({
+        email: "test@example.com",
         password: "short",
       });
       vi.mocked(validation.validateRegistrationInput).mockImplementation(() => {
-        throw new Error("Password must be at least 8 characters");
+        throw zodError;
       });
       vi.mocked(security.createErrorResponse).mockReturnValue(
         mockErrorResponse
@@ -172,14 +188,41 @@ describe("POST /api/auth/register", () => {
       expect(security.createErrorResponse).toHaveBeenCalledWith(
         400,
         "Bad Request",
-        "Invalid registration data: Password must be at least 8 characters"
+        "Invalid credentials"
       );
       expect(logging.logger.logRequestError).toHaveBeenCalledWith(
         2001,
         "Registration input validation failed",
-        expect.any(Error),
+        zodError,
+        context.request
+      );
+    });
+  });
+
+  describe("security validation", () => {
+    it("should return 403 if request is not secure", async () => {
+      // Arrange
+      const context = createMockAPIContext();
+      const mockErrorResponse = new Response("Forbidden", { status: 403 });
+
+      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
+        valid: false,
+        response: mockErrorResponse,
+      });
+
+      // Act
+      const result = await POST(context as unknown as APIContext);
+
+      // Assert
+      expect(result).toBe(mockErrorResponse);
+      expect(security.validateAndSecureRequest).toHaveBeenCalledWith(
         context.request,
-        { email: "invalid-email" }
+        "REGISTRATION"
+      );
+      expect(logging.logger.logRequest).toHaveBeenCalledWith(
+        3001,
+        "Registration attempt blocked by security check",
+        context.request
       );
     });
   });
@@ -202,7 +245,7 @@ describe("POST /api/auth/register", () => {
       vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
         valid: true,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockResolvedValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -246,7 +289,7 @@ describe("POST /api/auth/register", () => {
       vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
         valid: true,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockResolvedValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -303,7 +346,7 @@ describe("POST /api/auth/register", () => {
       vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
         valid: true,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockResolvedValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -360,7 +403,7 @@ describe("POST /api/auth/register", () => {
       vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
         valid: true,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockResolvedValue({
         email: "test@example.com",
         password: "Password123!",
       });

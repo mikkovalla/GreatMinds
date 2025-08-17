@@ -125,18 +125,25 @@ export const sanitizeInput = (input: string): string => {
 /**
  * Validates form data from request and extracts email/password
  */
-export const validateFormData = (
-  formData: FormData
+export const validateJsonBody = (
+  body: any
 ): { email: string; password: string } => {
-  const email = formData.get("email");
-  const password = formData.get("password");
+  try {
+    const email = body.email;
+    const password = body.password;
 
-  if (typeof email !== "string" || typeof password !== "string") {
-    throw new Error("Email and password must be provided as strings");
+    if (typeof email !== "string" || typeof password !== "string") {
+      throw new Error("Email and password must be provided as strings");
+    }
+
+    return {
+      email: sanitizeInput(email),
+      password, // Passwords should not be trimmed or altered
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Invalid JSON body: ${error.message}`);
+    }
+    throw new Error("Invalid JSON body");
   }
-
-  return {
-    email: sanitizeInput(email),
-    password: sanitizeInput(password),
-  };
 };

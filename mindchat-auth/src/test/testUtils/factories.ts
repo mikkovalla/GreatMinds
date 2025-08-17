@@ -8,6 +8,7 @@
  */
 import { vi } from "vitest";
 import type { User, Session } from "@supabase/supabase-js";
+import type { APIContext } from "astro";
 
 // Type for Stripe-specific environment variables
 type StripeEnvVars = {
@@ -97,17 +98,33 @@ export const createMockRequest = (
 };
 
 /**
+ * Creates a mock Request object with a JSON body
+ */
+export const createMockJsonRequest = (body: any): Request => {
+  return new Request("http://localhost/api/auth/register", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+};
+
+/**
  * Creates a mock APIContext for Astro tests
  */
-export const createMockAPIContext = (
-  formData: FormData = createMockRegistrationForm()
-) => {
+export const createMockAPIContext = (overrides: Partial<APIContext> = {}) => {
+  const defaultRequest = createMockJsonRequest({
+    email: "test@example.com",
+    password: "Password123!",
+  });
+
   const mockCookiesSet = vi.fn();
   const mockCookiesDelete = vi.fn();
   const mockRedirect = vi.fn();
 
   return {
-    request: createMockRequest(formData),
+    request: defaultRequest,
     cookies: {
       set: mockCookiesSet,
       get: vi.fn(),
@@ -121,6 +138,7 @@ export const createMockAPIContext = (
       cookiesDelete: mockCookiesDelete,
       redirect: mockRedirect,
     },
+    ...overrides,
   };
 };
 

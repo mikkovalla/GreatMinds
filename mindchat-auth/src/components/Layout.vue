@@ -2,46 +2,61 @@
   <div class="layout">
     <Navbar
       :is-authenticated="isAuthenticated"
-      @login="handleLogin"
-      @register="handleRegister"
+      @login="openLoginModal"
+      @register="openRegisterModal"
       @logout="handleLogout"
     />
     <main class="main-content">
       <slot />
     </main>
+    <AuthModal
+      :is-visible="isAuthModalVisible"
+      :initial-view="authModalView"
+      @close="closeAuthModal"
+      @authenticated="handleAuthentication"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import Navbar from "./Navbar.vue";
+import AuthModal from "./AuthModal.vue";
+import { supabase } from "@/lib/supabaseClient";
 
-// User authentication state
 const isAuthenticated = ref(false);
+const isAuthModalVisible = ref(false);
+const authModalView = ref<"login" | "register">("login");
 
-// Event handlers
-const handleLogin = (): void => {
-  // This will be implemented when you create the login form
-  console.log("Login clicked");
+onMounted(() => {
+  supabase.auth.onAuthStateChange((event, session) => {
+    isAuthenticated.value = !!session;
+  });
+});
+
+const openLoginModal = () => {
+  authModalView.value = "login";
+  isAuthModalVisible.value = true;
 };
 
-const handleRegister = (): void => {
-  // This will be implemented when you create the register form
-  console.log("Register clicked");
+const openRegisterModal = () => {
+  authModalView.value = "register";
+  isAuthModalVisible.value = true;
 };
 
-const handleLogout = (): void => {
-  // This will be implemented with your auth logic
-  console.log("Logout clicked");
+const closeAuthModal = () => {
+  isAuthModalVisible.value = false;
+};
+
+const handleAuthentication = () => {
+  isAuthenticated.value = true;
+  closeAuthModal();
+};
+
+const handleLogout = async () => {
+  await supabase.auth.signOut();
   isAuthenticated.value = false;
 };
-
-// Expose methods if needed by parent components
-defineExpose({
-  setAuthenticated: (value: boolean) => {
-    isAuthenticated.value = value;
-  },
-});
 </script>
 
 <style scoped>

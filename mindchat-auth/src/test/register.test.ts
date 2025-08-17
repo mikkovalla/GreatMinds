@@ -66,9 +66,6 @@ describe("POST /api/auth/register", () => {
         data: { user: mockUser, session: mockSession },
         error: null,
       });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      } as any);
 
       // Act - Execute the function under test
       await POST(context as unknown as APIContext);
@@ -82,13 +79,8 @@ describe("POST /api/auth/register", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      expect(supabase.from("profiles").insert).toHaveBeenCalledWith([
-        {
-          id: "user-123",
-          email: "test@example.com",
-          role: "Authenticated Free User",
-        },
-      ]);
+
+      // Note: Profile creation now happens automatically via database trigger
 
       // Verify cookies are set with proper options
       expect(context.__mocks.cookiesSet).toHaveBeenCalledTimes(2);
@@ -322,73 +314,6 @@ describe("POST /api/auth/register", () => {
         { email: "test@example.com" }
       );
     });
-
-    it("should return 500 when profile creation fails", async () => {
-      // Arrange
-      const context = createMockAPIContext();
-      const mockUser = createMockUser({
-        id: "user-123",
-        email: "test@example.com",
-      });
-      const mockSession = createMockSession({
-        user: mockUser,
-      });
-      const mockErrorResponse = new Response("Internal Server Error", {
-        status: 500,
-      });
-      const profileError = {
-        message: "Profile creation failed",
-        details: "Constraint violation",
-        hint: "",
-        code: "23505",
-      };
-
-      vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
-        valid: true,
-      });
-      vi.mocked(validation.validateJsonBody).mockResolvedValue({
-        email: "test@example.com",
-        password: "Password123!",
-      });
-      vi.mocked(validation.validateRegistrationInput).mockReturnValue({
-        email: "test@example.com",
-        password: "Password123!",
-      });
-      vi.mocked(supabase.auth.signUp).mockResolvedValue({
-        data: { user: mockUser, session: mockSession },
-        error: null,
-      });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: vi.fn().mockResolvedValue({
-          data: null,
-          error: profileError,
-          count: null,
-          status: 500,
-          statusText: "Internal Server Error",
-        }),
-      } as any);
-      vi.mocked(security.createErrorResponse).mockReturnValue(
-        mockErrorResponse
-      );
-
-      // Act
-      const result = await POST(context as unknown as APIContext);
-
-      // Assert
-      expect(result).toBe(mockErrorResponse);
-      expect(security.createErrorResponse).toHaveBeenCalledWith(
-        500,
-        "Internal Server Error",
-        "Could not create user profile."
-      );
-      expect(logging.logger.logRequestError).toHaveBeenCalledWith(
-        5001,
-        "Failed to create user profile",
-        profileError,
-        context.request,
-        { userId: "user-123" }
-      );
-    });
   });
 
   describe("email verification flow", () => {
@@ -415,21 +340,12 @@ describe("POST /api/auth/register", () => {
         data: { user: mockUser, session: null }, // No session when email verification is required
         error: null,
       });
-      vi.mocked(supabase.from).mockReturnValue({
-        insert: vi.fn().mockResolvedValue({ error: null }),
-      } as any);
 
       // Act
       await POST(context as unknown as APIContext);
 
       // Assert
-      expect(supabase.from("profiles").insert).toHaveBeenCalledWith([
-        {
-          id: "user-123",
-          email: "test@example.com",
-          role: "Authenticated Free User",
-        },
-      ]);
+      // Note: Profile creation now happens automatically via database trigger
 
       // Should not set cookies when no session
       expect(context.__mocks.cookiesSet).not.toHaveBeenCalled();

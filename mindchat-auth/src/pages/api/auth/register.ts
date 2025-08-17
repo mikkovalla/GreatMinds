@@ -120,28 +120,8 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       );
     }
 
-    const { error: profileError } = await supabase.from("profiles").insert([
-      {
-        id: signUpData.user.id,
-        email: signUpData.user.email,
-        role: "Authenticated Free User",
-      },
-    ]);
-
-    if (profileError) {
-      logger.logRequestError(
-        5001,
-        "Failed to create user profile",
-        profileError,
-        request,
-        { userId: signUpData.user.id }
-      );
-      return createErrorResponse(
-        500,
-        "Internal Server Error",
-        "Could not create user profile."
-      );
-    }
+    // Note: User profile will be automatically created by database trigger
+    // when the user record is inserted into auth.users table
 
     if (signUpData.session) {
       const cookieOptions = getCookieOptions(import.meta.env.PROD);

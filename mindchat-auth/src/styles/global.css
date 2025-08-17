@@ -85,8 +85,8 @@ body {
   background: linear-gradient(45deg, #c19000, #f9d423, #fff6a9, #c19000);
   background-size: 200% auto;
   color: transparent;
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 1px 1px #000, 10 0px 0px #c19000;
 }
@@ -214,6 +214,13 @@ main {
   max-width: var(--main-column-width);
   margin-left: auto;
   margin-right: auto;
+}
+
+/* Page container utility used by page templates */
+.page-container {
+  padding: 2rem 5%;
+  max-width: var(--main-column-width);
+  margin: 0 auto;
 }
 
 .author-section {
@@ -970,8 +977,8 @@ footer .container {
   background: linear-gradient(45deg, #c19000, #f9d423, #fff6a9, #c19000);
   background-size: 200% auto;
   color: transparent;
-  background-clip: text;
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
   text-shadow: 0 1px 1px #000, 10 0px 0px #c19000;
   animation: lightningPassage 10s linear infinite,

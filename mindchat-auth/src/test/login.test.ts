@@ -57,7 +57,8 @@ describe("POST /api/auth/login", () => {
         remainingAttempts: 9,
       });
       vi.mocked(security.getCookieOptions).mockReturnValue(mockCookieOptions);
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      // Client sends JSON in SPA; mock JSON body validator
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -129,7 +130,7 @@ describe("POST /api/auth/login", () => {
       vi.mocked(security.getCookieOptions).mockReturnValue(
         createMockCookieOptions()
       );
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "unverified@example.com",
         password: "Password123!",
       });
@@ -163,8 +164,9 @@ describe("POST /api/auth/login", () => {
 
   describe("validation errors", () => {
     it("should return 400 for invalid form data", async () => {
-      // Arrange
-      const context = createMockAPIContext();
+      // Arrange - use FormData so the handler parses form data path
+      const emptyFormData = new FormData();
+      const context = createMockAPIContext(emptyFormData);
       const mockErrorResponse = new Response("Bad Request", { status: 400 });
 
       vi.mocked(security.validateAndSecureRequest).mockResolvedValue({
@@ -207,7 +209,7 @@ describe("POST /api/auth/login", () => {
         rateLimitHeaders: {},
         remainingAttempts: 9,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "invalid-email",
         password: "",
       });
@@ -256,7 +258,7 @@ describe("POST /api/auth/login", () => {
         rateLimitHeaders: {},
         remainingAttempts: 8,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "test@example.com",
         password: "WrongPassword!",
       });
@@ -308,7 +310,7 @@ describe("POST /api/auth/login", () => {
         rateLimitHeaders: {},
         remainingAttempts: 7,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "unconfirmed@example.com",
         password: "Password123!",
       });
@@ -362,7 +364,7 @@ describe("POST /api/auth/login", () => {
         rateLimitHeaders: {},
         remainingAttempts: 6,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -408,7 +410,7 @@ describe("POST /api/auth/login", () => {
         rateLimitHeaders: {},
         remainingAttempts: 5,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -680,8 +682,9 @@ describe("POST /api/auth/login", () => {
     });
 
     it("should handle form data parsing errors", async () => {
-      // Arrange
-      const context = createMockAPIContext();
+      // Arrange - ensure the handler takes the form-data branch
+      const emptyFormData = new FormData();
+      const context = createMockAPIContext(emptyFormData);
       const mockErrorResponse = new Response("Bad Request", { status: 400 });
       const formDataError = new Error("Failed to parse form data");
 
@@ -701,16 +704,16 @@ describe("POST /api/auth/login", () => {
       // Act
       const result = await POST(context as unknown as APIContext);
 
-      // Assert
+      // Assert - malformed form data should be considered a bad request
       expect(result).toBe(mockErrorResponse);
       expect(security.createErrorResponse).toHaveBeenCalledWith(
-        500,
-        "Internal Server Error",
-        "An unexpected error occurred. Please try again."
+        400,
+        "Bad Request",
+        "Invalid form data: Failed to parse form data"
       );
       expect(logging.logger.logRequestError).toHaveBeenCalledWith(
-        5002,
-        "Unexpected error during login",
+        2009,
+        "Invalid form data received",
         formDataError,
         context.request
       );
@@ -759,7 +762,7 @@ describe("POST /api/auth/login", () => {
         rateLimitHeaders: {},
         remainingAttempts: 6,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "not-an-email",
         password: "Password123!",
       });

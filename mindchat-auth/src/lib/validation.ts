@@ -125,6 +125,32 @@ export const sanitizeInput = (input: string): string => {
 /**
  * Validates form data from request and extracts email/password
  */
+export const validateFormData = (
+  formData: FormData
+): { email: string; password: string } => {
+  try {
+    const emailRaw = formData.get("email");
+    const passwordRaw = formData.get("password");
+
+    if (typeof emailRaw !== "string" || typeof passwordRaw !== "string") {
+      throw new Error("Email and password must be provided as strings");
+    }
+
+    return {
+      email: sanitizeInput(emailRaw),
+      password: passwordRaw, // do not trim or alter passwords
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Invalid form data: ${error.message}`);
+    }
+    throw new Error("Invalid form data");
+  }
+};
+
+/**
+ * Validates JSON body
+ */
 export const validateJsonBody = (
   body: any
 ): { email: string; password: string } => {

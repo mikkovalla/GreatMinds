@@ -5,7 +5,11 @@ import {
   createErrorResponse,
   getCookieOptions,
 } from "@/lib/security";
-import { validateFormData, validateSignInInput } from "@/lib/validation";
+import {
+  validateFormData,
+  validateJsonBody,
+  validateSignInInput,
+} from "@/lib/validation";
 import { logger } from "@/lib/logging";
 
 /**
@@ -33,11 +37,20 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
       return securityCheck.response!;
     }
 
-    const formData = await request.formData();
+    // Support requests sent as JSON (preferred) or as form data
+    const contentType = request.headers.get("content-type") || "";
     let formInput: { email: string; password: string };
 
     try {
-      formInput = validateFormData(formData);
+      if (contentType.includes("application/json")) {
+        // JSON payloads (from SPA client)
+        const body = await request.json();
+        formInput = validateJsonBody(body);
+      } else {
+        // Form submissions (multipart/form-data or x-www-form-urlencoded)
+        const formData = await request.formData();
+        formInput = validateFormData(formData);
+      }
     } catch (error) {
       logger.logRequestError(
         2009,

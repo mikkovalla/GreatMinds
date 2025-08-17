@@ -113,11 +113,18 @@ export const createMockJsonRequest = (body: any): Request => {
 /**
  * Creates a mock APIContext for Astro tests
  */
-export const createMockAPIContext = (overrides: Partial<APIContext> = {}) => {
-  const defaultRequest = createMockJsonRequest({
-    email: "test@example.com",
-    password: "Password123!",
-  });
+export const createMockAPIContext = (
+  overrides: Partial<APIContext> | FormData = {}
+) => {
+  let defaultRequest: Request;
+  if (overrides instanceof FormData) {
+    defaultRequest = createMockRequest(overrides);
+  } else {
+    defaultRequest = createMockJsonRequest({
+      email: "test@example.com",
+      password: "Password123!",
+    });
+  }
 
   const mockCookiesSet = vi.fn();
   const mockCookiesDelete = vi.fn();
@@ -138,7 +145,7 @@ export const createMockAPIContext = (overrides: Partial<APIContext> = {}) => {
       cookiesDelete: mockCookiesDelete,
       redirect: mockRedirect,
     },
-    ...overrides,
+    ...(overrides instanceof FormData ? {} : overrides),
   };
 };
 

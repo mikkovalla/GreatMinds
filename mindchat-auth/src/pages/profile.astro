@@ -1,6 +1,7 @@
 ---
 import Layout from '@/components/Layout.vue';
 import ProfilePage from '@/components/ProfilePage.vue';
+import '../styles/global.css'
 import { supabase } from '@/lib/supabaseClient';
 
 const { data } = await supabase.auth.getSession();
@@ -11,5 +12,7 @@ if (!data.session) {
 ---
 
 <Layout client:load>
-  <ProfilePage client:load />
+  <div class="container" style="padding: 2rem 5%; max-width: var(--main-column-width); margin: 0 auto;">
+    <ProfilePage client:load />
+  </div>
 </Layout>

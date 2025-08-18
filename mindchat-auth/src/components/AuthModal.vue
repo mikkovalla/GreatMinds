@@ -145,6 +145,7 @@ const handleRegister = async () => {
       errorMessage.value = errorData.message || "Registration failed.";
     }
   } catch (error) {
+    console.error("Registration error:", error);
     errorMessage.value = "An unexpected error occurred.";
   } finally {
     isLoading.value = false;
@@ -152,82 +153,4 @@ const handleRegister = async () => {
 };
 </script>
 
-<style scoped>
-.auth-modal-backdrop {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.7);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
 
-.auth-modal-container {
-  background-color: var(--component-bg);
-  padding: 2rem;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 400px;
-  position: relative;
-  border: 1px solid var(--border-color);
-}
-
-.close-button {
-  position: absolute;
-  top: 1rem;
-  right: 1rem;
-  background: none;
-  border: none;
-  color: var(--text-color);
-  font-size: 1.5rem;
-  cursor: pointer;
-}
-
-.modal-title {
-  color: var(--gold-bright);
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-
-.form-group {
-  margin-bottom: 1rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  color: var(--text-color);
-}
-
-.form-group input {
-  width: 100%;
-  padding: 0.75rem;
-  background-color: var(--background-color);
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-  color: var(--text-color);
-}
-
-.error-message {
-  color: #ff4d4d;
-  margin-bottom: 1rem;
-  text-align: center;
-}
-
-.toggle-view {
-  text-align: center;
-  margin-top: 1rem;
-}
-
-.toggle-view button {
-  background: none;
-  border: none;
-  color: var(--gold-bright);
-  cursor: pointer;
-  text-decoration: underline;
-}
-</style>

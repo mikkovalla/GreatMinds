@@ -59,15 +59,4 @@ const handleLogout = async () => {
 };
 </script>
 
-<style scoped>
-.layout {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
 
-.main-content {
-  flex-grow: 1;
-  width: 100%;
-}
-</style>

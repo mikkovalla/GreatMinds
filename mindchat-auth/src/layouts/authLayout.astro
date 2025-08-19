@@ -24,6 +24,10 @@ const {
         --text-color: #e0e0e0;
         --border-color: #3a3a3a;
         --component-bg: #1e1e1e;
+        --background-color: #0a0a0a;
+        --gold-bright: #ffd700;
+        --gold-medium: #e0b64c;
+        --gold-dark: #c19000;
         --main-column-width: 1200px;
       }
 
@@ -114,6 +118,7 @@ const {
       }
 
       .auth-card {
+        position: relative;
         width: 100%;
         max-width: 420px;
         background: var(--component-bg);
@@ -121,6 +126,7 @@ const {
         border-radius: 12px;
         padding: 2rem;
         box-shadow: 0 10px 30px #00000040;
+        overflow: hidden;
       }
 
       .modal-title {
@@ -211,27 +217,21 @@ const {
         gap: 0;
       }
 
-      .auth-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin: 1.5rem 0;
-      }
-
-      .auth-footer {
-        font-size: 0.9rem;
-        opacity: 0.9;
-        margin-top: 1rem;
+      .auth-logo {
+        margin-bottom: 2.5rem;
         text-align: center;
       }
 
-      .auth-footer a {
-        color: #ffd700;
-        text-decoration: none;
+      .logo-link {
+        display: inline-block;
+        max-width: 160px;
+        margin: 0 auto;
       }
 
-      .auth-footer a:hover {
-        text-decoration: underline;
+      .logo-image {
+        width: 100%;
+        height: auto;
+        max-width: 120px;
       }
 
       @media (max-width: 1023px) {
@@ -270,61 +270,9 @@ const {
   </head>
   <body>
     <main class="auth-page">
-      <div class="auth-inner">
-        <section class="auth-left" aria-hidden="true">
-          <div class="auth-left-inner">
-            <h1 class="site-title"><a href="/">GreatMinds</a></h1>
-
-            <p class="auth-description">
-              {description}
-            </p>
-
-            <div class="auth-illustration">
-              <slot name="illustration">
-                <!-- Default illustration -->
-                <svg
-                  width="280"
-                  height="240"
-                  viewBox="0 0 280 240"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                  aria-hidden="true"
-                >
-                  <rect
-                    x="10"
-                    y="10"
-                    width="260"
-                    height="220"
-                    rx="20"
-                    fill="#2a2a2a"
-                    stroke="#3a3a3a"></rect>
-                  <circle cx="80" cy="90" r="10" fill="#ffd700"></circle>
-                  <rect
-                    x="110"
-                    y="70"
-                    width="100"
-                    height="14"
-                    rx="6"
-                    fill="#3a3a3a"></rect>
-                  <rect
-                    x="110"
-                    y="96"
-                    width="70"
-                    height="10"
-                    rx="5"
-                    fill="#4a4a4a"></rect>
-                </svg>
-              </slot>
-            </div>
-          </div>
-        </section>
-
-        <aside class="auth-right">
-          <section class="auth-card" aria-label="Authentication form">
-            <slot />
-          </section>
-        </aside>
-      </div>
+      <section class="auth-card" aria-label="Authentication form">
+        <slot />
+      </section>
     </main>
   </body>
 </html>

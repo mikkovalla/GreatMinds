@@ -1,15 +1,19 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { createUsualClient } from "@/lib/supabaseClient";
-const supabase = createUsualClient();
 import type { User } from "@supabase/supabase-js";
 
-const activeTab = ref("profile");
-const user = ref<User | null>(null);
+const props = defineProps<{ initialUser: User | null }>();
 
-onMounted(async () => {
-  const { data } = await supabase.auth.getUser();
-  user.value = data.user;
+const activeTab = ref("profile");
+const user = ref<User | null>(props.initialUser ?? null);
+
+// Handle URL parameters to set initial tab
+onMounted(() => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const tab = urlParams.get('tab');
+  if (tab && ['profile', 'chats', 'subscription'].includes(tab)) {
+    activeTab.value = tab;
+  }
 });
 </script>
 

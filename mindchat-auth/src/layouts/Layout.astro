@@ -1,0 +1,12 @@
+---
+import Navbar from "../components/Navbar.astro";
+const user = Astro.locals?.user ?? null;
+---
+
+<div class="layout">
+  <Navbar user={user} />
+
+  <main class="main-content">
+    <slot />
+  </main>
+</div>

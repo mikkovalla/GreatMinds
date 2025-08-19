@@ -32,8 +32,7 @@ import { logger } from "@/lib/logging";
 export const POST: APIRoute = async (context) => {
   const { request, cookies, redirect, locals } = context;
   // Use middleware-injected per-request client when available, otherwise create one
-  const supabase =
-    (locals && (locals.supabase as any)) || createClient(cookies);
+  const supabase = locals.supabase || createClient(cookies);
   try {
     const securityCheck = await validateAndSecureRequest(request, "LOGIN");
     if (!securityCheck.valid) {

@@ -1,19 +1,35 @@
 ---
-import Layout from "@/components/Layout.vue";
+import Layout from "@/layouts/Layout.astro";
 import ProfilePage from "@/components/ProfilePage.vue";
 import "../styles/global.css";
-import { createClient } from "@/lib/supabaseClient";
 
-const supabase = createClient(Astro.cookies);
+// Use middleware-provided supabase client
+const supabase = Astro.locals.supabase;
 const { data } = await supabase.auth.getSession();
 
 if (!data.session) {
   return Astro.redirect("/");
 }
+
+const serverUser = data.session.user;
+const serverIsAuthenticated = !!data?.session;
 ---
 
-<Layout client:load>
-  <div class="container page-container">
-    <ProfilePage client:load />
-  </div>
-</Layout>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width" />
+    <meta name="generator" content={Astro.generator} />
+    <title>Profile - MindChat</title>
+  </head>
+  <body>
+    <div id="profile-layout">
+      <Layout>
+        <div class="container page-container">
+          <ProfilePage client:idle initialUser={serverUser} />
+        </div>
+      </Layout>
+    </div>
+  </body>
+</html>

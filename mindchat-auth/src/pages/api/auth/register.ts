@@ -6,7 +6,11 @@ import {
   createErrorResponse,
   getCookieOptions,
 } from "@/lib/security";
-import { validateJsonBody, validateRegistrationInput } from "@/lib/validation";
+import {
+  validateJsonBody,
+  validateFormData,
+  validateRegistrationInput,
+} from "@/lib/validation";
 import { logger } from "@/lib/logging";
 
 /**
@@ -29,8 +33,7 @@ import { logger } from "@/lib/logging";
 export const POST: APIRoute = async (context) => {
   const { request, cookies, redirect, locals } = context;
   // Use middleware-injected per-request client when available, otherwise create one
-  const supabase =
-    (locals && (locals.supabase as any)) || createClient(cookies);
+  const supabase = locals.supabase || createClient(cookies);
   try {
     const securityCheck = await validateAndSecureRequest(
       request,
@@ -47,8 +50,24 @@ export const POST: APIRoute = async (context) => {
 
     let validatedInput;
     try {
-      const body = await request.json();
-      const formInput = validateJsonBody(body);
+      // Support requests sent as JSON (preferred) or as form data
+      const contentType = request.headers.get("content-type") || "";
+      let formInput: {
+        email: string;
+        password: string;
+        confirmPassword?: string;
+      };
+
+      if (contentType.includes("application/json")) {
+        // JSON payloads (from SPA client)
+        const body = await request.json();
+        formInput = validateJsonBody(body);
+      } else {
+        // Form submissions (multipart/form-data or x-www-form-urlencoded)
+        const formData = await request.formData();
+        formInput = validateFormData(formData);
+      }
+
       validatedInput = validateRegistrationInput(formInput);
     } catch (error) {
       if (error instanceof z.ZodError) {

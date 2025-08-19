@@ -16,14 +16,10 @@ export const createClient = (cookies: AstroCookies) => {
         return cookies.get(key)?.value;
       },
       set(key: string, value: string, options: CookieOptions) {
-        if (!key) {
-          console.warn("Supabase cookie set called with empty key");
-          return;
-        }
-        return cookies.set(key, value, options as any);
+        return cookies.set(key, value, options);
       },
       remove(key: string, options?: CookieOptions) {
-        return cookies.delete(key, options as any);
+        return cookies.delete(key, options);
       },
     },
   });

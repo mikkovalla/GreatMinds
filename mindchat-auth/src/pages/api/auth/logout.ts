@@ -22,8 +22,8 @@ import { logger } from "@/lib/logging";
  */
 export const POST: APIRoute = async (context) => {
   const { request, cookies, redirect, locals } = context;
-  const supabase =
-    (locals && (locals.supabase as any)) || createClient(cookies);
+  const supabase = locals.supabase || createClient(cookies);
+
   try {
     // Security validation and rate limiting
     const securityCheck = await validateAndSecureRequest(request, "LOGOUT");
@@ -41,9 +41,16 @@ export const POST: APIRoute = async (context) => {
     const supabaseError = supabaseResponse?.error || null;
 
     // Clear session cookies regardless of Supabase outcome (graceful degradation)
-    // Ensure cookies are cleared via Astro cookies API
-    cookies.delete("sb-access-token");
-    cookies.delete("sb-refresh-token");
+    // Use the same cookie names that Supabase SSR uses
+    cookies.delete("sb-access-token", { path: "/" });
+    cookies.delete("sb-refresh-token", { path: "/" });
+
+    // Also clear any other potential Supabase cookie variants
+    const cookieNames = ["sb-access-token", "sb-refresh-token"];
+    cookieNames.forEach((name) => {
+      cookies.delete(name, { path: "/" });
+      cookies.delete(name, { path: "/", domain: undefined });
+    });
 
     // Log Supabase errors but don't fail the logout process
     if (supabaseError) {

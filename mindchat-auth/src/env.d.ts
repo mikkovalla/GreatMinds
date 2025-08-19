@@ -21,5 +21,7 @@ interface ImportMeta {
 declare namespace App {
   interface Locals {
     supabase: import("@supabase/supabase-js").SupabaseClient;
+    // Currently the middleware populates `user` into Astro.locals when the session exists
+    user?: any;
   }
 }

@@ -113,13 +113,14 @@ const handleLogin = async () => {
     });
     if (response.ok) {
       emit("authenticated");
-      closeModal();
+      // Reload the page to get the updated authentication state from SSR
+      window.location.reload();
     } else {
       const errorData = await response.json();
       errorMessage.value = errorData.message || "Login failed.";
     }
   } catch (error) {
-    errorMessage.value = "An unexpected error occurred.";
+    errorMessage.value = "An unexpected error occurred." + error;
   } finally {
     isLoading.value = false;
   }
@@ -139,7 +140,8 @@ const handleRegister = async () => {
     });
     if (response.ok) {
       emit("authenticated");
-      closeModal();
+      // Reload the page to get the updated authentication state from SSR
+      window.location.reload();
     } else {
       const errorData = await response.json();
       errorMessage.value = errorData.message || "Registration failed.";

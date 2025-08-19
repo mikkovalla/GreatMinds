@@ -1,0 +1,115 @@
+---
+import AuthLayout from "../layouts/authLayout.astro";
+---
+
+<AuthLayout
+  title="Create Account"
+  description="Join GreatMinds and start chatting with history's greatest minds."
+>
+  <form method="post" action="/api/auth/register" class="auth-form">
+    <h2 class="modal-title">Create your account</h2>
+
+    <div class="form-group">
+      <label for="email">Email</label>
+      <input
+        id="email"
+        name="email"
+        type="email"
+        required
+        placeholder="Enter your email"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="password">Password</label>
+      <input
+        id="password"
+        name="password"
+        type="password"
+        required
+        placeholder="Create a password"
+        minlength="8"
+      />
+    </div>
+
+    <div class="form-group">
+      <label for="confirmPassword">Confirm Password</label>
+      <input
+        id="confirmPassword"
+        name="confirmPassword"
+        type="password"
+        required
+        placeholder="Confirm your password"
+        minlength="8"
+      />
+    </div>
+
+    <div class="auth-buttons">
+      <button class="button button--primary button--large" type="submit">
+        Create Account
+      </button>
+
+      <button
+        type="button"
+        class="button button--secondary button--large"
+        aria-label="Continue with Google"
+      >
+        <span style="display:inline-flex;align-items:center;gap:0.5rem;">
+          <img
+            src="/favicon.svg"
+            alt="Google"
+            style="width:18px;height:18px;"
+          />
+          Sign up with Google
+        </span>
+      </button>
+
+      <button
+        type="button"
+        class="button button--secondary button--large"
+        aria-label="Continue with Facebook"
+      >
+        <span style="display:inline-flex;align-items:center;gap:0.5rem;">
+          <img
+            src="/flags/us.svg"
+            alt="Facebook"
+            style="width:18px;height:18px;"
+          />
+          Sign up with Facebook
+        </span>
+      </button>
+    </div>
+
+    <div class="auth-footer">
+      Already have an account? <a href="/login">Sign in</a>
+    </div>
+  </form>
+
+  <fragment slot="illustration">
+    <!-- Custom illustration for register page -->
+    <svg
+      width="280"
+      height="240"
+      viewBox="0 0 280 240"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      aria-hidden="true"
+    >
+      <rect
+        x="10"
+        y="10"
+        width="260"
+        height="220"
+        rx="20"
+        fill="#2a2a2a"
+        stroke="#3a3a3a"></rect>
+      <circle cx="70" cy="80" r="8" fill="#ffd700"></circle>
+      <circle cx="140" cy="80" r="8" fill="#ffd700"></circle>
+      <circle cx="210" cy="80" r="8" fill="#ffd700"></circle>
+      <rect x="50" y="120" width="180" height="12" rx="6" fill="#3a3a3a"></rect>
+      <rect x="70" y="150" width="140" height="8" rx="4" fill="#4a4a4a"></rect>
+      <path d="M140 190L140 170" stroke="#ffd700" stroke-width="2"></path>
+      <path d="M130 180L150 180" stroke="#ffd700" stroke-width="2"></path>
+    </svg>
+  </fragment>
+</AuthLayout>

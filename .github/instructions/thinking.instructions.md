@@ -1,10 +1,10 @@
 ---
-applyTo: '**'
+applyTo: "**"
 ---
 
 # Thinking Instructions
 
-After any context change (viewing new files, running commands, or receiving tool outputs), use the "mcp_think" tool to organize your reasoning before responding.
+After any context change (viewing new files, running commands, or receiving tool outputs), use the "mcp_think" tool to organize your reasoning before responding. Output in the chat clearly that you used the think tool.
 
 Specifically, always use the think tool when:
 

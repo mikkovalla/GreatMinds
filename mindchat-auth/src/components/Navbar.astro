@@ -1,0 +1,54 @@
+---
+import NavbarClient from './NavbarClient.vue';
+const { user = null } = Astro.props;
+---
+
+<header class="nav">
+  <div class="container">
+    <nav class="nav-container">
+      <div class="nav-logo text-gold text-gold-animated">
+        <a href="/en/">MindChat</a>
+      </div>
+
+      <ul class="nav-links">
+        <li><a href="/en/categories/writer">Writers</a></li>
+        <li><a href="/en/categories/thinker">Thinkers</a></li>
+        <li><a href="/en/categories/scientist">Scientists</a></li>
+      </ul>
+
+      <div class="desktop-language-picker">
+        <!-- keep language picker markup minimal on server-side; client handles interactivity when needed -->
+        <div class="language-picker">
+          <div class="current-language">
+            <img
+              src="https://cdn.jsdelivr.net/gh/lipis/flag-icons@latest/flags/4x3/us.svg"
+              alt="English"
+              class="flag-icon"
+            />
+          </div>
+        </div>
+      </div>
+
+      <div class="nav-auth">
+        {user ? (
+          <div>
+            <!-- Server-rendered avatar placeholder; client component hydrates for interactivity -->
+            <NavbarClient client:idle user={user} />
+          </div>
+        ) : (
+          <>
+            <a class="button button--ghost button--small" href="/login">Login</a>
+            <a class="button button--primary button--small" href="/register">Register</a>
+          </>
+        )}
+      </div>
+
+      <!-- Mobile hamburger rendered server-side but interactive behaviour attached client-side if needed -->
+      <button class="hamburger" aria-label="Open menu">
+        <span></span><span></span><span></span>
+      </button>
+    </nav>
+  </div>
+
+  <!-- Client behavior is handled by NavbarClient.vue (hydrated with client:idle) -->
+</header>

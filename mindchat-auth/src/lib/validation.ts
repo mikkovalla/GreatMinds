@@ -28,12 +28,18 @@ const emailSchema = z
   .toLowerCase();
 
 /**
- * User registration input validation schema
+ * User registration input validation schema with password confirmation
  */
-export const registerSchema = z.object({
-  email: emailSchema,
-  password: passwordSchema,
-});
+export const registerSchema = z
+  .object({
+    email: emailSchema,
+    password: passwordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 /**
  * User sign-in input validation schema
@@ -123,23 +129,34 @@ export const sanitizeInput = (input: string): string => {
 };
 
 /**
- * Validates form data from request and extracts email/password
+ * Validates form data from request and extracts email/password/confirmPassword
  */
 export const validateFormData = (
   formData: FormData
-): { email: string; password: string } => {
+): { email: string; password: string; confirmPassword?: string } => {
   try {
     const emailRaw = formData.get("email");
     const passwordRaw = formData.get("password");
+    const confirmPasswordRaw = formData.get("confirmPassword");
 
     if (typeof emailRaw !== "string" || typeof passwordRaw !== "string") {
       throw new Error("Email and password must be provided as strings");
     }
 
-    return {
+    const result: {
+      email: string;
+      password: string;
+      confirmPassword?: string;
+    } = {
       email: sanitizeInput(emailRaw),
       password: passwordRaw, // do not trim or alter passwords
     };
+
+    if (confirmPasswordRaw && typeof confirmPasswordRaw === "string") {
+      result.confirmPassword = confirmPasswordRaw;
+    }
+
+    return result;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Invalid form data: ${error.message}`);
@@ -153,19 +170,30 @@ export const validateFormData = (
  */
 export const validateJsonBody = (
   body: any
-): { email: string; password: string } => {
+): { email: string; password: string; confirmPassword?: string } => {
   try {
     const email = body.email;
     const password = body.password;
+    const confirmPassword = body.confirmPassword;
 
     if (typeof email !== "string" || typeof password !== "string") {
       throw new Error("Email and password must be provided as strings");
     }
 
-    return {
+    const result: {
+      email: string;
+      password: string;
+      confirmPassword?: string;
+    } = {
       email: sanitizeInput(email),
       password, // Passwords should not be trimmed or altered
     };
+
+    if (confirmPassword && typeof confirmPassword === "string") {
+      result.confirmPassword = confirmPassword;
+    }
+
+    return result;
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Invalid JSON body: ${error.message}`);

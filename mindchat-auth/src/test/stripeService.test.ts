@@ -107,7 +107,10 @@ describe("Stripe Service Functions", () => {
         const { createCheckoutSession } = await import("@/lib/stripeService");
 
         // Act
-        const result = await createCheckoutSession(checkoutParams);
+        const result = await createCheckoutSession(
+          checkoutParams,
+          mockSupabaseClient
+        );
 
         // Assert
         expect(result).toEqual(expectedSession);
@@ -156,7 +159,10 @@ describe("Stripe Service Functions", () => {
         const { createCheckoutSession } = await import("@/lib/stripeService");
 
         // Act
-        const result = await createCheckoutSession(checkoutParams);
+        const result = await createCheckoutSession(
+          checkoutParams,
+          mockSupabaseClient
+        );
 
         // Assert
         expect(mockStripeClient.customers.create).toHaveBeenCalledWith({
@@ -188,7 +194,7 @@ describe("Stripe Service Functions", () => {
         const { createCheckoutSession } = await import("@/lib/stripeService");
 
         // Act
-        await createCheckoutSession(checkoutParams);
+        await createCheckoutSession(checkoutParams, mockSupabaseClient);
 
         // Assert
         expect(mockLogger.log).toHaveBeenCalledWith(
@@ -216,9 +222,9 @@ describe("Stripe Service Functions", () => {
         const { createCheckoutSession } = await import("@/lib/stripeService");
 
         // Act & Assert
-        await expect(createCheckoutSession(checkoutParams)).rejects.toThrow(
-          "User not found"
-        );
+        await expect(
+          createCheckoutSession(checkoutParams, mockSupabaseClient)
+        ).rejects.toThrow("User not found");
         expect(mockLogger.logError).toHaveBeenCalledWith(
           7110,
           "Failed to retrieve user profile for checkout",
@@ -240,9 +246,9 @@ describe("Stripe Service Functions", () => {
         const { createCheckoutSession } = await import("@/lib/stripeService");
 
         // Act & Assert
-        await expect(createCheckoutSession(checkoutParams)).rejects.toThrow(
-          "Invalid price ID"
-        );
+        await expect(
+          createCheckoutSession(checkoutParams, mockSupabaseClient)
+        ).rejects.toThrow("Invalid price ID");
         expect(mockLogger.logError).toHaveBeenCalledWith(
           7111,
           "Failed to create checkout session",
@@ -266,9 +272,9 @@ describe("Stripe Service Functions", () => {
         const { createCheckoutSession } = await import("@/lib/stripeService");
 
         // Act & Assert
-        await expect(createCheckoutSession(checkoutParams)).rejects.toThrow(
-          "Invalid email"
-        );
+        await expect(
+          createCheckoutSession(checkoutParams, mockSupabaseClient)
+        ).rejects.toThrow("Invalid email");
         expect(mockLogger.logError).toHaveBeenCalledWith(
           7112,
           "Failed to create Stripe customer",
@@ -296,9 +302,9 @@ describe("Stripe Service Functions", () => {
         const { createCheckoutSession } = await import("@/lib/stripeService");
 
         // Act & Assert
-        await expect(createCheckoutSession(checkoutParams)).rejects.toThrow(
-          "Database connection failed"
-        );
+        await expect(
+          createCheckoutSession(checkoutParams, mockSupabaseClient)
+        ).rejects.toThrow("Database connection failed");
         expect(mockLogger.logError).toHaveBeenCalledWith(
           7113,
           "Failed to save customer ID to database",
@@ -480,7 +486,11 @@ describe("Stripe Service Functions", () => {
         const { syncSubscriptionStatus } = await import("@/lib/stripeService");
 
         // Act
-        const result = await syncSubscriptionStatus(subscription.id, userId);
+        const result = await syncSubscriptionStatus(
+          subscription.id,
+          userId,
+          mockSupabaseClient
+        );
 
         // Assert
         expect(result).toEqual(subscription);
@@ -516,7 +526,11 @@ describe("Stripe Service Functions", () => {
         const { syncSubscriptionStatus } = await import("@/lib/stripeService");
 
         // Act
-        await syncSubscriptionStatus(subscription.id, userId);
+        await syncSubscriptionStatus(
+          subscription.id,
+          userId,
+          mockSupabaseClient
+        );
 
         // Assert
         expect(mockLogger.log).toHaveBeenCalledWith(
@@ -550,7 +564,11 @@ describe("Stripe Service Functions", () => {
         const { syncSubscriptionStatus } = await import("@/lib/stripeService");
 
         // Act
-        await syncSubscriptionStatus(subscription.id, userId);
+        await syncSubscriptionStatus(
+          subscription.id,
+          userId,
+          mockSupabaseClient
+        );
 
         // Assert
         expect(mockLogger.log).toHaveBeenCalledWith(
@@ -604,7 +622,7 @@ describe("Stripe Service Functions", () => {
 
         // Act & Assert
         await expect(
-          syncSubscriptionStatus(subscription.id, userId)
+          syncSubscriptionStatus(subscription.id, userId, mockSupabaseClient)
         ).rejects.toThrow("Database connection failed");
         expect(mockLogger.logError).toHaveBeenCalledWith(
           7131,

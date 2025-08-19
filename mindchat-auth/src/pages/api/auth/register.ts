@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { APIRoute } from "astro";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabaseClient";
 import {
   validateAndSecureRequest,
   createErrorResponse,
@@ -26,7 +26,11 @@ import { logger } from "@/lib/logging";
  * @param context - Astro API context containing request and response utilities
  * @returns Response - Redirect to home page on success, JSON error on failure
  */
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+export const POST: APIRoute = async (context) => {
+  const { request, cookies, redirect, locals } = context;
+  // Use middleware-injected per-request client when available, otherwise create one
+  const supabase =
+    (locals && (locals.supabase as any)) || createClient(cookies);
   try {
     const securityCheck = await validateAndSecureRequest(
       request,

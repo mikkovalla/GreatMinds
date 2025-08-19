@@ -23,33 +23,11 @@ beforeEach(() => {
   vi.resetAllMocks();
 });
 
-// Mock external dependencies only - these are infrastructure concerns
-// that should always be mocked in tests
+// Mock external dependencies are intentionally left to individual tests.
+// This ensures each test file explicitly declares its dependencies and
+// provides its own Supabase mocks via `vi.mock("@/lib/supabaseClient", ...)`
+// when needed. Keeping mocks local to tests improves isolation and avoids
+// brittle global test state.
 
-// Mock Supabase - External API
-vi.mock("@/lib/supabaseClient", () => ({
-  supabase: {
-    auth: {
-      signUp: vi.fn(),
-      signInWithPassword: vi.fn(),
-      setSession: vi.fn(),
-      signOut: vi.fn(),
-    },
-    from: vi.fn(() => ({
-      insert: vi.fn(),
-      select: vi.fn(),
-      update: vi.fn(),
-      delete: vi.fn(),
-    })),
-  },
-}));
-
-// Mock internal modules are intentionally left to individual tests
-// This promotes:
-// 1. Explicit test dependencies
-// 2. Better test isolation
-// 3. Easier debugging
-// 4. More maintainable tests
-
-// If you need shared mock utilities, create them in testUtils/ folder
-// and import them in individual test files as needed
+// If you need shared mock utilities, create them in `src/test/testUtils`
+// and import them in individual test files as needed.

@@ -7,7 +7,6 @@
  */
 
 import { stripe } from "@/lib/stripe";
-import { supabase } from "@/lib/supabaseClient";
 import { logger } from "@/lib/logging";
 import { StripeEvent } from "@/lib/loggingConstants";
 
@@ -37,7 +36,10 @@ export type PortalParams = {
  * @returns Stripe checkout session object
  * @throws Error if validation fails or Stripe/database operations fail
  */
-export const createCheckoutSession = async (params: CheckoutParams) => {
+export const createCheckoutSession = async (
+  params: CheckoutParams,
+  supabaseClient?: any
+) => {
   // Input validation
   if (!params.userId || params.userId.trim() === "") {
     throw new Error("User ID is required");
@@ -53,8 +55,14 @@ export const createCheckoutSession = async (params: CheckoutParams) => {
   }
 
   try {
-    // Get user profile from database
-    const userProfileResponse = await supabase
+    // Require an explicit Supabase client to avoid implicit global/module fallbacks
+    if (!supabaseClient) {
+      throw new Error(
+        "supabaseClient is required. Pass an explicit Supabase client to stripeService functions."
+      );
+    }
+    const sb = supabaseClient;
+    const userProfileResponse = await sb
       .from("profiles")
       .select("*")
       .eq("id", params.userId)
@@ -87,7 +95,7 @@ export const createCheckoutSession = async (params: CheckoutParams) => {
         customerId = customer.id;
 
         // Save customer ID to database
-        const updateResponse = await supabase
+        const updateResponse = await sb
           .from("profiles")
           .update({ stripe_customer_id: customerId })
           .eq("id", params.userId);
@@ -153,7 +161,7 @@ export const createCheckoutSession = async (params: CheckoutParams) => {
     }
   } catch (error) {
     // Re-throw any errors that were already logged in specific handlers above
-    // This catch ensures any unexpected errors are still propagated
+    // Ensures the stack is preserved and linter is satisfied by using the error
     throw error;
   }
 };
@@ -212,7 +220,8 @@ export const createPortalSession = async (params: PortalParams) => {
  */
 export const syncSubscriptionStatus = async (
   subscriptionId: string,
-  userId: string
+  userId: string,
+  supabaseClient?: any
 ) => {
   // Input validation
   if (!subscriptionId || subscriptionId.trim() === "") {
@@ -225,9 +234,15 @@ export const syncSubscriptionStatus = async (
   try {
     // Retrieve subscription from Stripe
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    if (!supabaseClient) {
+      throw new Error(
+        "supabaseClient is required. Pass an explicit Supabase client to stripeService functions."
+      );
+    }
+    const sb = supabaseClient;
 
     // Update database with subscription status
-    const updateResponse = await supabase
+    const updateResponse = await sb
       .from("profiles")
       .update({
         subscription_status: subscription.status,

@@ -9,8 +9,12 @@
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { z } from "zod";
+// Provide a mock supabase client via createClient
+const mockSupabase = { auth: { signUp: vi.fn() } } as any;
+vi.mock("@/lib/supabaseClient", () => ({
+  createClient: (cookies: any) => mockSupabase,
+}));
 import { POST } from "../pages/api/auth/register";
-import { supabase } from "@/lib/supabaseClient";
 import * as security from "@/lib/security";
 import * as validation from "@/lib/validation";
 import * as logging from "@/lib/logging";
@@ -24,7 +28,6 @@ import {
 import type { APIContext } from "astro";
 
 // Mock external dependencies at the top of the test file
-vi.mock("@/lib/supabaseClient");
 vi.mock("@/lib/security");
 vi.mock("@/lib/validation");
 vi.mock("@/lib/logging");
@@ -62,7 +65,7 @@ describe("POST /api/auth/register", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signUp).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
       });
@@ -75,7 +78,7 @@ describe("POST /api/auth/register", () => {
         context.request,
         "REGISTRATION"
       );
-      expect(supabase.auth.signUp).toHaveBeenCalledWith({
+      expect(mockSupabase.auth.signUp).toHaveBeenCalledWith({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -245,7 +248,7 @@ describe("POST /api/auth/register", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signUp).mockResolvedValue({
         data: { user: null, session: null },
         error: signUpError,
       });
@@ -289,7 +292,7 @@ describe("POST /api/auth/register", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signUp).mockResolvedValue({
         data: { user: null, session: null },
         error: null,
       });
@@ -336,7 +339,7 @@ describe("POST /api/auth/register", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signUp).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signUp).mockResolvedValue({
         data: { user: mockUser, session: null }, // No session when email verification is required
         error: null,
       });

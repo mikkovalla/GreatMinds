@@ -14,6 +14,9 @@ importers:
       '@astrojs/vue':
         specifier: ^5.1.0
         version: 5.1.0(@types/node@24.2.1)(astro@5.12.9(@types/node@24.2.1)(rollup@4.46.2)(typescript@5.9.2))(rollup@4.46.2)(vue@3.5.18(typescript@5.9.2))
+      '@supabase/ssr':
+        specifier: ^0.0.8
+        version: 0.0.8(@supabase/supabase-js@2.54.0)
       '@supabase/supabase-js':
         specifier: ^2.54.0
         version: 2.54.0
@@ -673,6 +676,11 @@ packages:
   '@supabase/realtime-js@2.15.0':
     resolution: {integrity: sha512-SEIWApsxyoAe68WU2/5PCCuBwa11LL4Bb8K3r2FHCt3ROpaTthmDiWEhnLMGayP05N4QeYrMk0kyTZOwid/Hjw==}
 
+  '@supabase/ssr@0.0.8':
+    resolution: {integrity: sha512-Mah6o5TJ4HOF6RBIZ4Frm11a4LgQlUQqpr6fMjt6pk6r2im3vxXdqs+egbY5RU7OLsxfpeVyWH95Xfd5GcN6LA==}
+    peerDependencies:
+      '@supabase/supabase-js': ^2.33.1
+
   '@supabase/storage-js@2.10.4':
     resolution: {integrity: sha512-cvL02GarJVFcNoWe36VBybQqTVRq6wQSOCvTS64C+eyuxOruFIm1utZAY0xi2qKtHJO3EjKaj8iWJKySusDmAQ==}
 
@@ -1022,6 +1030,10 @@ packages:
 
   cookie-es@1.2.2:
     resolution: {integrity: sha512-+W7VmiVINB+ywl1HGXJXmrqkOhpKrIiVZV6tQuV54ZyQC7MMuBt81Vc336GMLoHBq5hV/F9eXgt5Mnx0Rha5Fg==}
+
+  cookie@0.5.0:
+    resolution: {integrity: sha512-YZ3GUyn/o8gfKJlnlX7g7xq4gyO6OSuhGPKaaGssGB2qgDUS0gPgtTvoyZLTt9Ab6dC4hfc9dV5arkvc/OCmrw==}
+    engines: {node: '>= 0.6'}
 
   cookie@1.0.2:
     resolution: {integrity: sha512-9Kr/j4O16ISv8zBBhJoi4bXOYNTkFLOqSL3UDB0njXxCXNezjeyVrJyGOWtgfs/q2km1gwBcfH8q1yEGoMYunA==}
@@ -1814,6 +1826,9 @@ packages:
 
   radix3@1.1.2:
     resolution: {integrity: sha512-b484I/7b8rDEdSDKckSSBA8knMpcdsXudlE/LNL639wFoHKwLbEkQFZHWEYwDC0wa0FKUcCY+GAF73Z7wxNVFA==}
+
+  ramda@0.29.1:
+    resolution: {integrity: sha512-OfxIeWzd4xdUNxlWhgFazxsA/nl3mS4/jGZI5n00uWOoSSFRhC1b6gl6xvmzUamgmqELraWp0J/qqVlXYPDPyA==}
 
   range-parser@1.2.1:
     resolution: {integrity: sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==}
@@ -3063,6 +3078,12 @@ snapshots:
       - bufferutil
       - utf-8-validate
 
+  '@supabase/ssr@0.0.8(@supabase/supabase-js@2.54.0)':
+    dependencies:
+      '@supabase/supabase-js': 2.54.0
+      cookie: 0.5.0
+      ramda: 0.29.1
+
   '@supabase/storage-js@2.10.4':
     dependencies:
       '@supabase/node-fetch': 2.6.15
@@ -3586,6 +3607,8 @@ snapshots:
   convert-source-map@2.0.0: {}
 
   cookie-es@1.2.2: {}
+
+  cookie@0.5.0: {}
 
   cookie@1.0.2: {}
 
@@ -4571,6 +4594,8 @@ snapshots:
       side-channel: 1.1.0
 
   radix3@1.1.2: {}
+
+  ramda@0.29.1: {}
 
   range-parser@1.2.1: {}
 

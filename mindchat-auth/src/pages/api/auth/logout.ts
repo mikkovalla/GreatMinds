@@ -1,5 +1,5 @@
 import type { APIRoute } from "astro";
-import { supabase } from "@/lib/supabaseClient";
+import { createClient } from "@/lib/supabaseClient";
 import { validateAndSecureRequest, createErrorResponse } from "@/lib/security";
 import { logger } from "@/lib/logging";
 
@@ -20,7 +20,10 @@ import { logger } from "@/lib/logging";
  * @param context - Astro API context containing request and response utilities
  * @returns Response - Redirect to home page on success, JSON error on failure
  */
-export const POST: APIRoute = async ({ request, cookies, redirect }) => {
+export const POST: APIRoute = async (context) => {
+  const { request, cookies, redirect, locals } = context;
+  const supabase =
+    (locals && (locals.supabase as any)) || createClient(cookies);
   try {
     // Security validation and rate limiting
     const securityCheck = await validateAndSecureRequest(request, "LOGOUT");
@@ -38,6 +41,7 @@ export const POST: APIRoute = async ({ request, cookies, redirect }) => {
     const supabaseError = supabaseResponse?.error || null;
 
     // Clear session cookies regardless of Supabase outcome (graceful degradation)
+    // Ensure cookies are cleared via Astro cookies API
     cookies.delete("sb-access-token");
     cookies.delete("sb-refresh-token");
 

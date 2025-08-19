@@ -22,7 +22,8 @@
 import { ref, onMounted } from "vue";
 import Navbar from "./Navbar.vue";
 import AuthModal from "./AuthModal.vue";
-import { supabase } from "@/lib/supabaseClient";
+import { createUsualClient } from "@/lib/supabaseClient";
+const supabase = createUsualClient();
 
 const isAuthenticated = ref(false);
 const isAuthModalVisible = ref(false);
@@ -54,8 +55,32 @@ const handleAuthentication = () => {
 };
 
 const handleLogout = async () => {
-  await supabase.auth.signOut();
-  isAuthenticated.value = false;
+  try {
+    // Call server-side logout to ensure HTTP-only cookies are cleared (SSR session)
+    await fetch('/api/auth/logout', { method: 'POST', credentials: 'same-origin' });
+
+    // Also sign out client-side to clear any browser-stored session
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // Non-fatal: server-side logout is authoritative for SSR; log to console for debugging
+      // eslint-disable-next-line no-console
+      console.warn('Client-side signOut failed (non-fatal)', e);
+    }
+
+    // Force a full reload so SSR will run and see the anonymous session
+    window.location.replace('/');
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.error('Logout failed', err);
+    // Fallback: try client sign out and update UI state
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      // ignore
+    }
+    isAuthenticated.value = false;
+  }
 };
 </script>
 

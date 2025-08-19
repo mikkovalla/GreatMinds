@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import { supabase } from "@/lib/supabaseClient";
+import { createUsualClient } from "@/lib/supabaseClient";
+const supabase = createUsualClient();
 import type { User } from "@supabase/supabase-js";
 
 const activeTab = ref("profile");

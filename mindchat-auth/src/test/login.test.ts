@@ -10,8 +10,12 @@
  * - Isolated test scenarios
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+// Create a mock supabase client and make createClient return it
+const mockSupabase = { auth: { signInWithPassword: vi.fn() } } as any;
+vi.mock("@/lib/supabaseClient", () => ({
+  createClient: (cookies: any) => mockSupabase,
+}));
 import { POST } from "../pages/api/auth/login";
-import { supabase } from "@/lib/supabaseClient";
 import * as security from "@/lib/security";
 import * as validation from "@/lib/validation";
 import * as logging from "@/lib/logging";
@@ -24,7 +28,6 @@ import {
 import type { APIContext } from "astro";
 
 // Mock external dependencies at the top of the test file
-vi.mock("@/lib/supabaseClient");
 vi.mock("@/lib/security");
 vi.mock("@/lib/validation");
 vi.mock("@/lib/logging");
@@ -66,7 +69,7 @@ describe("POST /api/auth/login", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
       });
@@ -80,7 +83,7 @@ describe("POST /api/auth/login", () => {
         "LOGIN"
       );
       expect(security.getCookieOptions).toHaveBeenCalledWith(false);
-      expect(supabase.auth.signInWithPassword).toHaveBeenCalledWith({
+      expect(mockSupabase.auth.signInWithPassword).toHaveBeenCalledWith({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -138,7 +141,7 @@ describe("POST /api/auth/login", () => {
         email: "unverified@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
       });
@@ -266,7 +269,7 @@ describe("POST /api/auth/login", () => {
         email: "test@example.com",
         password: "WrongPassword!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: null, session: null },
         error: authError,
       });
@@ -318,7 +321,7 @@ describe("POST /api/auth/login", () => {
         email: "unconfirmed@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: null, session: null },
         error: emailNotConfirmedError,
       });
@@ -372,7 +375,7 @@ describe("POST /api/auth/login", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: null, session: null },
         error: internalError,
       });
@@ -418,7 +421,7 @@ describe("POST /api/auth/login", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: null, session: null, weakPassword: null },
         error: null,
       } as any);
@@ -460,7 +463,7 @@ describe("POST /api/auth/login", () => {
         rateLimitHeaders: {},
         remainingAttempts: 4,
       });
-      vi.mocked(validation.validateFormData).mockReturnValue({
+      vi.mocked(validation.validateJsonBody).mockReturnValue({
         email: "test@example.com",
         password: "Password123!",
       });
@@ -468,7 +471,7 @@ describe("POST /api/auth/login", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: mockUser, session: null, weakPassword: null },
         error: null,
       } as any); // User exists but no session
@@ -552,7 +555,7 @@ describe("POST /api/auth/login", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
       });
@@ -598,7 +601,7 @@ describe("POST /api/auth/login", () => {
       );
       // Should not proceed to validation or authentication
       expect(validation.validateFormData).not.toHaveBeenCalled();
-      expect(supabase.auth.signInWithPassword).not.toHaveBeenCalled();
+      expect(mockSupabase.auth.signInWithPassword).not.toHaveBeenCalled();
     });
   });
 
@@ -624,7 +627,7 @@ describe("POST /api/auth/login", () => {
         email: "test@example.com",
         password: "Password123!",
       });
-      vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signInWithPassword).mockResolvedValue({
         data: { user: mockUser, session: mockSession },
         error: null,
       });

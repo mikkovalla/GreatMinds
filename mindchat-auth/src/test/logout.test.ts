@@ -16,15 +16,17 @@
  * - Edge cases and error scenarios
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
+const mockSupabase = { auth: { signOut: vi.fn() } } as any;
+vi.mock("@/lib/supabaseClient", () => ({
+  createClient: (cookies: any) => mockSupabase,
+}));
 import { POST } from "../pages/api/auth/logout";
-import { supabase } from "@/lib/supabaseClient";
 import * as security from "@/lib/security";
 import * as logging from "@/lib/logging";
 import { createMockLogoutAPIContext } from "./testUtils/factories";
 import type { APIContext } from "astro";
 
 // Mock external dependencies - these provide controlled behavior for testing
-vi.mock("@/lib/supabaseClient");
 vi.mock("@/lib/security");
 vi.mock("@/lib/logging");
 
@@ -60,7 +62,7 @@ describe("POST /api/auth/logout", () => {
         remainingAttempts: 9,
       });
 
-      vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signOut).mockResolvedValue({
         error: null,
       });
 
@@ -73,7 +75,7 @@ describe("POST /api/auth/logout", () => {
         "LOGOUT"
       );
 
-      expect(supabase.auth.signOut).toHaveBeenCalledTimes(1);
+      expect(mockSupabase.auth.signOut).toHaveBeenCalledTimes(1);
 
       // Verify both session cookies are deleted
       expect(context.cookies.delete).toHaveBeenCalledTimes(2);
@@ -105,7 +107,7 @@ describe("POST /api/auth/logout", () => {
         remainingAttempts: 9,
       });
 
-      vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signOut).mockResolvedValue({
         error: supabaseError,
       });
 
@@ -169,7 +171,7 @@ describe("POST /api/auth/logout", () => {
       );
 
       // Should not call Supabase or clear cookies when rate limited
-      expect(supabase.auth.signOut).not.toHaveBeenCalled();
+      expect(mockSupabase.auth.signOut).not.toHaveBeenCalled();
       expect(context.cookies.delete).not.toHaveBeenCalled();
       expect(context.redirect).not.toHaveBeenCalled();
     });
@@ -193,7 +195,7 @@ describe("POST /api/auth/logout", () => {
 
       // Assert
       expect(response).toBe(securityErrorResponse);
-      expect(supabase.auth.signOut).not.toHaveBeenCalled();
+      expect(mockSupabase.auth.signOut).not.toHaveBeenCalled();
       expect(context.cookies.delete).not.toHaveBeenCalled();
     });
   });
@@ -215,7 +217,7 @@ describe("POST /api/auth/logout", () => {
         remainingAttempts: 9,
       });
 
-      vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signOut).mockResolvedValue({
         error: timeoutError,
       });
 
@@ -282,7 +284,7 @@ describe("POST /api/auth/logout", () => {
         remainingAttempts: 9,
       });
 
-      vi.mocked(supabase.auth.signOut).mockResolvedValue({
+      vi.mocked(mockSupabase.auth.signOut).mockResolvedValue({
         error: null,
       });
 
@@ -310,7 +312,7 @@ describe("POST /api/auth/logout", () => {
       });
 
       // Simulate unexpected null response from Supabase
-      vi.mocked(supabase.auth.signOut).mockResolvedValue(null as any);
+      vi.mocked(mockSupabase.auth.signOut).mockResolvedValue(null as any);
 
       // Act - Call the actual logout endpoint
       await POST(context as unknown as APIContext);

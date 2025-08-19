@@ -1,13 +1,14 @@
 ---
-import Layout from '@/components/Layout.vue';
-import ProfilePage from '@/components/ProfilePage.vue';
-import '../styles/global.css'
-import { supabase } from '@/lib/supabaseClient';
+import Layout from "@/components/Layout.vue";
+import ProfilePage from "@/components/ProfilePage.vue";
+import "../styles/global.css";
+import { createClient } from "@/lib/supabaseClient";
 
+const supabase = createClient(Astro.cookies);
 const { data } = await supabase.auth.getSession();
 
 if (!data.session) {
-  return Astro.redirect('/');
+  return Astro.redirect("/");
 }
 ---
 

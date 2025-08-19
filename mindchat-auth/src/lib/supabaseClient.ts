@@ -1,7 +1,34 @@
-import { createClient } from '@supabase/supabase-js';
+import {
+  createServerClient,
+  createBrowserClient,
+  type CookieOptions,
+} from "@supabase/ssr";
 
-export const supabase = createClient(
-  import.meta.env.PUBLIC_SUPABASE_URL,
-  import.meta.env.PUBLIC_SUPABASE_ANON_KEY,
-  { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
-);
+import type { AstroCookies } from "astro";
+
+const supabaseURL = import.meta.env.PUBLIC_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;
+
+export const createClient = (cookies: AstroCookies) => {
+  return createServerClient(supabaseURL, supabaseAnonKey, {
+    cookies: {
+      get(key: string) {
+        return cookies.get(key)?.value;
+      },
+      set(key: string, value: string, options: CookieOptions) {
+        if (!key) {
+          console.warn("Supabase cookie set called with empty key");
+          return;
+        }
+        return cookies.set(key, value, options as any);
+      },
+      remove(key: string, options?: CookieOptions) {
+        return cookies.delete(key, options as any);
+      },
+    },
+  });
+};
+
+export const createUsualClient = () => {
+  return createBrowserClient(supabaseURL, supabaseAnonKey);
+};

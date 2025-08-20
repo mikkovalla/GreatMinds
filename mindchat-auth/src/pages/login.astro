@@ -1,8 +1,8 @@
 ---
 import AuthLayout from "../layouts/authLayout.astro";
-import { Input, AuthForm } from "../components";
+import { Signin } from "../components/auth/index.ts";
 ---
 
-<AuthLayout>
-  <AuthForm action="/api/auth/login" submitText="Sign In" />
+<AuthLayout title="Sign In" description="Access your GreatMinds account.">
+  <Signin action="/api/auth/login" submitText="Sign In" />
 </AuthLayout>

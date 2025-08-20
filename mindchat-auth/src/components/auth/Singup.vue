@@ -2,21 +2,30 @@
   <div class="auth-form-container">
     <form :method="method" :action="action" class="auth-form">
       <div class="form-content">
-        <Input id="email" name="email" type="email" placeholder="Email" required />
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          placeholder="Email"
+          required
+        />
         <Input
           id="password"
           name="password"
           type="password"
-          placeholder="Password"
+          placeholder="Create a password"
           required
         />
-        
+        <Input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          placeholder="Confirm your password"
+          required
+        />
+
         <div class="submit-section">
-          <input 
-            type="submit" 
-            :value="submitText" 
-            class="submit-button" 
-          />
+          <input type="submit" :value="submitText" class="submit-button" />
         </div>
       </div>
     </form>
@@ -24,29 +33,28 @@
     <SocialButtons />
 
     <div class="auth-footer">
-      <a href="/forgot-password" class="forgot-link">Forget Password?</a>
       <p class="signup-text">
-        <span>Not a member yet? </span>
-        <a href="/register" class="signup-link">Sign Up</a>
+        <span>Already have an account? </span>
+        <a href="/login" class="signup-link">Log In</a>
       </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { defineProps } from 'vue'
-import SocialButtons from './SocialButtons.vue'
-import Input from './Input.vue'
+import { defineProps } from "vue";
+import SocialButtons from "../SocialButtons.vue";
+import Input from "../Input.vue";
 
 interface Props {
-  method?: string
-  action: string
-  submitText: string
+  method?: string;
+  action: string;
+  submitText: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  method: 'post'
-})
+  method: "post",
+});
 </script>
 
 <style scoped>

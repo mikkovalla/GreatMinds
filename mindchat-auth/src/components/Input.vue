@@ -14,36 +14,35 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits } from 'vue'
+import { defineProps, defineEmits } from "vue";
 
 interface Props {
-  id: string
-  name: string
-  type?: string
-  label?: string
-  placeholder?: string
-  required?: boolean
-  modelValue?: string
+  id: string;
+  name: string;
+  type?: string;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  modelValue?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  type: 'text',
+  type: "text",
   required: false,
-  modelValue: ''
-})
+  modelValue: "",
+});
 
 const emit = defineEmits<{
-  'update:modelValue': [value: string]
-}>()
+  "update:modelValue": [value: string];
+}>();
 
 const updateValue = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.value)
-}
+  const target = event.target as HTMLInputElement;
+  emit("update:modelValue", target.value);
+};
 </script>
 
 <style scoped>
-
 .form-input {
   width: -webkit-fill-available;
   padding: 0.75rem;

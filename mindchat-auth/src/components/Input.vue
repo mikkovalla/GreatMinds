@@ -10,6 +10,9 @@
       @input="updateValue"
       class="form-input"
     />
+    <div v-if="error" class="form-error" role="alert" aria-live="polite">
+      {{ error }}
+    </div>
   </div>
 </template>
 
@@ -24,12 +27,14 @@ interface Props {
   placeholder?: string;
   required?: boolean;
   modelValue?: string;
+  error?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   type: "text",
   required: false,
   modelValue: "",
+  error: null,
 });
 
 const emit = defineEmits<{
@@ -67,5 +72,11 @@ const updateValue = (event: Event) => {
 
 .form-input:hover {
   border-color: var(--gold-medium);
+}
+
+.form-error {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: var(--danger-color, #dc2626);
 }
 </style>
